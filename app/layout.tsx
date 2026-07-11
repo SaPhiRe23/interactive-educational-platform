@@ -1,36 +1,31 @@
-import { Analytics } from '@vercel/analytics/next'
-import type { Metadata, Viewport } from 'next'
-import './globals.css'
+import { Analytics } from "@vercel/analytics/next"
+import type { Metadata, Viewport } from "next"
+import { Inter, Space_Grotesk } from "next/font/google"
+import { Suspense } from "react"
+import { Toaster } from "@/components/ui/sonner"
+import "./globals.css"
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+})
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
+  title: "Festival del Patinódromo 2026 | Plataforma del Evento",
+  description:
+    "Plataforma interactiva del Festival del Patinódromo 2026: inscripciones, cronograma, mapa del recinto, galerías, encuestas, estadísticas, insignias y certificados digitales.",
+  generator: "v0.app",
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light dark',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
-  ],
+  themeColor: "#e2622b",
 }
 
 export default function RootLayout({
@@ -39,10 +34,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">
-        {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+    <html lang="es" className={`${inter.variable} ${spaceGrotesk.variable} bg-background`}>
+      <body className="font-sans antialiased">
+        <Suspense fallback={null}>{children}</Suspense>
+        <Toaster position="top-center" richColors />
+        {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
   )
