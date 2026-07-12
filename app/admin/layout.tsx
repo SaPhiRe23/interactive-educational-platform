@@ -4,7 +4,7 @@ import { getSettings } from "@/lib/data"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 
 export const metadata = {
-  title: "Panel administrativo | Festival del Patinódromo",
+  title: "Panel administrativo | Huellas que Construyen Futuro",
 }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

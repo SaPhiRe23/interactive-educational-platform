@@ -3,7 +3,7 @@ import { isAdmin } from "@/lib/admin-auth"
 import { LoginForm } from "@/components/admin/login-form"
 
 export const metadata = {
-  title: "Acceso administrador | Festival del Patinódromo",
+  title: "Acceso administrador | Huellas que Construyen Futuro",
 }
 
 export default async function LoginPage() {
@@ -19,7 +19,7 @@ export default async function LoginPage() {
             <span className="font-heading text-lg font-bold">P</span>
           </span>
           <h1 className="mt-4 font-heading text-xl font-bold text-sidebar-foreground">Panel administrativo</h1>
-          <p className="mt-1 text-sm text-sidebar-foreground/60">Festival del Patinódromo 2026</p>
+          <p className="mt-1 text-sm text-sidebar-foreground/60">Huellas que Construyen Futuro</p>
         </div>
         <LoginForm />
       </div>
