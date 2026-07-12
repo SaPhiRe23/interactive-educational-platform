@@ -18,9 +18,9 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: "Festival del Patinódromo 2026 | Plataforma del Evento",
+  title: "Huellas que Construyen Futuro | Plataforma del Evento",
   description:
-    "Plataforma interactiva del Festival del Patinódromo 2026: inscripciones, cronograma, mapa del recinto, galerías, encuestas, estadísticas, insignias y certificados digitales.",
+    "Plataforma interactiva de Huellas que Construyen Futuro: inscripciones, cronograma, mapa del recinto, galerías, encuestas, estadísticas, insignias y certificados digitales.",
   generator: "v0.app",
 }
 

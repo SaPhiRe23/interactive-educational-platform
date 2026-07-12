@@ -1,0 +1,92 @@
+"use client"
+
+import Image from "next/image"
+import { useMemo, useState } from "react"
+import { MapPin } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import type { MapZone } from "@/lib/db/schema"
+
+type ZoneItem = Pick<MapZone, "id" | "name" | "description" | "posX" | "posY">
+
+export function SiteMapViewer({
+  imageUrl,
+  zones,
+}: {
+  imageUrl: string
+  zones: ZoneItem[]
+}) {
+  const sortedZones = useMemo(
+    () => [...zones].sort((a, b) => a.id - b.id),
+    [zones],
+  )
+
+  const [selectedId, setSelectedId] = useState<number | null>(
+    sortedZones[0]?.id ?? null,
+  )
+
+  const selectedZone =
+    sortedZones.find((zone) => zone.id === selectedId) ?? sortedZones[0] ?? null
+
+  return (
+    <div className="space-y-5">
+      <Card className="overflow-hidden border-border/70 shadow-sm">
+        <CardContent className="p-0">
+          <div className="relative aspect-[16/10] w-full bg-muted">
+            <Image
+              src={imageUrl}
+              alt="Mapa del Patinódromo"
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 70vw"
+            />
+
+            {sortedZones.map((zone, index) => (
+              <button
+                key={zone.id}
+                type="button"
+                onClick={() => setSelectedId(zone.id)}
+                style={{ left: `${zone.posX}%`, top: `${zone.posY}%` }}
+                className="absolute -translate-x-1/2 -translate-y-1/2"
+                aria-label={zone.name}
+                title={zone.name}
+              >
+                <span
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow-md transition-transform ${selectedZone?.id === zone.id ? "scale-110 bg-primary" : "bg-black/70 hover:scale-105"}`}
+                >
+                  {index + 1}
+                </span>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {selectedZone ? (
+        <Card className="border-border/70 shadow-sm">
+          <CardContent className="space-y-3 p-5">
+            <div className="flex items-center gap-2">
+              <Badge className="gap-1">
+                <MapPin className="h-3 w-3" />
+                Punto importante
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                Haz clic en los marcadores del mapa para explorar cada zona.
+              </span>
+            </div>
+            <h3 className="font-heading text-xl font-semibold text-foreground">
+              {selectedZone.name}
+            </h3>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {selectedZone.description || "Zona estratégica del Patinódromo."}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <p className="rounded-xl border border-dashed border-border/70 bg-secondary/20 px-4 py-6 text-center text-sm text-muted-foreground">
+          Aún no hay zonas configuradas en el mapa.
+        </p>
+      )}
+    </div>
+  )
+}

@@ -63,6 +63,13 @@ export async function GET(request: NextRequest) {
     return Response.json({ ok: false, message: "No encontramos una inscripción con ese correo." }, { status: 404 })
   }
 
+  if (!participant.completed) {
+    return Response.json(
+      { ok: false, message: "Tu participación aún no ha sido confirmada por el equipo organizador." },
+      { status: 403 },
+    )
+  }
+
   const settings = await getSettings()
   const pdf = await PDFDocument.create()
   const page = pdf.addPage([842, 595])
