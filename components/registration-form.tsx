@@ -66,7 +66,7 @@ export function RegistrationForm({ open }: { open: boolean }) {
               <Link href="/cronograma">Ver cronograma</Link>
             </Button>
             <Button asChild>
-              <Link href={`/certificado?code=${state.code}`}>Mi certificado</Link>
+              <Link href="/certificado">Mi certificado</Link>
             </Button>
           </div>
         </CardContent>

@@ -51,6 +51,15 @@ export async function getParticipantByCode(code: string) {
   return rows[0] ?? null
 }
 
+export async function getParticipantByEmail(email: string) {
+  const rows = await db
+    .select()
+    .from(participants)
+    .where(eq(participants.email, email.toLowerCase().trim()))
+    .limit(1)
+  return rows[0] ?? null
+}
+
 export async function getBadgesForParticipant(participantId: number) {
   return db
     .select({
