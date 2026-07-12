@@ -129,9 +129,11 @@ export async function getStats() {
     .where(eq(surveyResponses.wouldRecommend, true))
 
   const [badgesAwarded] = await db.select({ value: count() }).from(participantBadges)
+  const [activitiesTotal] = await db.select({ value: count() }).from(activities)
 
   return {
     participantsTotal: participantsTotal?.value ?? 0,
+    activitiesTotal: activitiesTotal?.value ?? 0,
     completedTotal: completedTotal?.value ?? 0,
     surveyTotal: surveyTotal?.value ?? 0,
     avgRating: Number(avgRating?.value ?? 0),
@@ -141,5 +143,66 @@ export async function getStats() {
     byCity: byCity.filter((r) => r.city).map((r) => ({ name: r.city as string, value: r.value })),
     registrationsByDay: registrationsByDay.map((r) => ({ day: r.day, value: r.value })),
     ratingDistribution: ratingDistribution.map((r) => ({ rating: r.rating, value: r.value })),
+  }
+}
+
+export const STAT_METRICS = [
+  { key: "participantsTotal", label: "Participantes" },
+  { key: "activitiesTotal", label: "Actividades" },
+  { key: "completedTotal", label: "Completados" },
+  { key: "badgesAwarded", label: "Insignias otorgadas" },
+  { key: "surveyTotal", label: "Opiniones" },
+  { key: "avgRating", label: "Calificación promedio" },
+  { key: "recommendCount", label: "Recomendarían el evento" },
+] as const
+
+export type StatMetricKey = (typeof STAT_METRICS)[number]["key"]
+
+export async function getStatSettings() {
+  const rows = await db.select().from(eventSettings)
+  const map: Record<string, string> = {}
+  for (const row of rows) {
+    if (row.value !== null) map[row.key] = row.value
+  }
+  return map
+}
+
+export async function getPublicStats() {
+  const raw = await getStats()
+  const settings = await getStatSettings()
+
+  const rawValues: Record<StatMetricKey, number> = {
+    participantsTotal: raw.participantsTotal,
+    activitiesTotal: raw.activitiesTotal,
+    completedTotal: raw.completedTotal,
+    badgesAwarded: raw.badgesAwarded,
+    surveyTotal: raw.surveyTotal,
+    avgRating: raw.avgRating,
+    recommendCount: raw.recommendCount,
+  }
+
+  const metrics = STAT_METRICS.map(({ key, label }) => {
+    const overrideRaw = settings[`stat_override_${key}`]
+    const hasOverride = overrideRaw !== undefined && overrideRaw.trim() !== ""
+    const visible = (settings[`stat_visible_${key}`] ?? "true") !== "false"
+    const rawValue = rawValues[key]
+    const value = hasOverride ? Number(overrideRaw) : rawValue
+
+    return {
+      key,
+      label,
+      value: Number.isFinite(value) ? value : rawValue,
+      rawValue,
+      visible,
+      overridden: hasOverride,
+    }
+  })
+
+  return {
+    metrics,
+    byCategory: raw.byCategory,
+    byCity: raw.byCity,
+    registrationsByDay: raw.registrationsByDay,
+    ratingDistribution: raw.ratingDistribution,
   }
 }

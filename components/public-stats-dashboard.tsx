@@ -17,13 +17,15 @@ import {
 } from "recharts"
 import { Card, CardContent } from "@/components/ui/card"
 
+type StatMetric = {
+  key: string
+  label: string
+  value: number
+  visible: boolean
+}
+
 type StatsPayload = {
-  participantsTotal: number
-  completedTotal: number
-  surveyTotal: number
-  avgRating: number
-  recommendCount: number
-  badgesAwarded: number
+  metrics: StatMetric[]
   byCategory: { name: string; value: number }[]
   byCity: { name: string; value: number }[]
   registrationsByDay: { day: string; value: number }[]
@@ -40,47 +42,29 @@ function EmptyChart() {
   )
 }
 
+function formatMetricValue(key: string, value: number) {
+  return key === "avgRating" ? value.toFixed(1) : String(value)
+}
+
 export function PublicStatsDashboard({ stats }: { stats: StatsPayload }) {
+  const visibleMetrics = stats.metrics.filter((m) => m.visible)
+
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card className="border-border/70">
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Inscritos totales</p>
-            <p className="mt-2 font-heading text-3xl font-bold text-foreground">{stats.participantsTotal}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/70">
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Participantes completados</p>
-            <p className="mt-2 font-heading text-3xl font-bold text-foreground">{stats.completedTotal}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/70">
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Insignias otorgadas</p>
-            <p className="mt-2 font-heading text-3xl font-bold text-foreground">{stats.badgesAwarded}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/70">
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Encuestas recibidas</p>
-            <p className="mt-2 font-heading text-3xl font-bold text-foreground">{stats.surveyTotal}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/70">
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Calificación promedio</p>
-            <p className="mt-2 font-heading text-3xl font-bold text-foreground">{stats.avgRating.toFixed(1)}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/70">
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Recomendarían el evento</p>
-            <p className="mt-2 font-heading text-3xl font-bold text-foreground">{stats.recommendCount}</p>
-          </CardContent>
-        </Card>
-      </div>
+      {visibleMetrics.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {visibleMetrics.map((metric) => (
+            <Card key={metric.key} className="border-border/70">
+              <CardContent className="p-5">
+                <p className="text-sm text-muted-foreground">{metric.label}</p>
+                <p className="mt-2 font-heading text-3xl font-bold text-foreground">
+                  {formatMetricValue(metric.key, metric.value)}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="border-border/70">

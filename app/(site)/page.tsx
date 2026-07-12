@@ -4,17 +4,20 @@ import {
   Award,
   BarChart3,
   Calendar,
+  CheckCircle2,
   ClipboardCheck,
   Images,
   Map,
   MapPin,
   ScrollText,
+  Star,
+  ThumbsUp,
   UserPlus,
   Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { getSettings, getStats } from "@/lib/data"
+import { getSettings, getPublicStats, type StatMetricKey } from "@/lib/data"
 
 const features = [
   { href: "/inscripcion", icon: UserPlus, title: "Inscripción", desc: "Regístrate y recibe tu código único de participante." },
@@ -27,8 +30,23 @@ const features = [
   { href: "/certificado", icon: ScrollText, title: "Certificado", desc: "Descarga tu certificado en PDF." },
 ]
 
+const statIcons: Record<StatMetricKey, typeof UserPlus> = {
+  participantsTotal: UserPlus,
+  activitiesTotal: Calendar,
+  completedTotal: CheckCircle2,
+  badgesAwarded: Award,
+  surveyTotal: ClipboardCheck,
+  avgRating: Star,
+  recommendCount: ThumbsUp,
+}
+
+function formatStatValue(key: StatMetricKey, value: number) {
+  return key === "avgRating" ? value.toFixed(1) : String(value)
+}
+
 export default async function HomePage() {
-  const [settings, stats] = await Promise.all([getSettings(), getStats()])
+  const [settings, stats] = await Promise.all([getSettings(), getPublicStats()])
+  const visibleMetrics = stats.metrics.filter((m) => m.visible)
 
   return (
     <>
@@ -67,26 +85,28 @@ export default async function HomePage() {
       </section>
 
       {/* Stats highlights */}
-      <section className="mx-auto -mt-12 max-w-7xl px-4">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {[
-            { label: "Participantes", value: 28, icon: UserPlus },
-            { label: "Actividades", value: 6, icon: Calendar },
-            { label: "Insignias otorgadas", value: stats.badgesAwarded, icon: Award },
-            { label: "Opiniones", value: stats.surveyTotal, icon: ClipboardCheck },
-          ].map((stat) => (
-            <Card key={stat.label} className="border-border/70 shadow-sm">
-              <CardContent className="flex flex-col items-center gap-1 py-6 text-center">
-                <stat.icon className="mb-1 h-6 w-6 text-primary" />
-                <span className="font-heading text-3xl font-bold text-foreground">{stat.value}</span>
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {stat.label}
-                </span>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+      {visibleMetrics.length > 0 && (
+        <section className="mx-auto -mt-12 max-w-7xl px-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {visibleMetrics.map((metric) => {
+              const Icon = statIcons[metric.key as StatMetricKey]
+              return (
+                <Card key={metric.key} className="border-border/70 shadow-sm">
+                  <CardContent className="flex flex-col items-center gap-1 py-6 text-center">
+                    <Icon className="mb-1 h-6 w-6 text-primary" />
+                    <span className="font-heading text-3xl font-bold text-foreground">
+                      {formatStatValue(metric.key as StatMetricKey, metric.value)}
+                    </span>
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {metric.label}
+                    </span>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Features */}
       <section className="mx-auto max-w-7xl px-4 py-16">

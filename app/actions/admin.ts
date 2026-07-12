@@ -14,6 +14,7 @@ import {
   surveyResponses,
 } from "@/lib/db/schema"
 import { isAdmin } from "@/lib/admin-auth"
+import { STAT_METRICS } from "@/lib/data"
 
 type ActionResult = { ok: boolean; message?: string }
 
@@ -64,6 +65,38 @@ export async function updateSettings(_prev: unknown, formData: FormData): Promis
   revalidatePath("/")
   revalidatePath("/inscripcion")
   return { ok: true, message: "Configuración guardada." }
+}
+
+// ---------- Stat display settings (visibility + manual overrides) ----------
+
+export async function updateStatSettings(_prev: unknown, formData: FormData): Promise<ActionResult> {
+  await requireAdmin()
+
+  const entries: [string, string][] = []
+
+  for (const { key } of STAT_METRICS) {
+    const visible = formData.get(`visible_${key}`) === "on"
+    const overrideRaw = String(formData.get(`override_${key}`) ?? "").trim()
+
+    if (overrideRaw && Number.isNaN(Number(overrideRaw))) {
+      return { ok: false, message: `El valor manual para "${key}" debe ser un número.` }
+    }
+
+    entries.push([`stat_visible_${key}`, visible ? "true" : "false"])
+    entries.push([`stat_override_${key}`, overrideRaw])
+  }
+
+  for (const [key, value] of entries) {
+    await db
+      .insert(eventSettings)
+      .values({ key, value })
+      .onConflictDoUpdate({ target: eventSettings.key, set: { value } })
+  }
+
+  revalidateAll()
+  revalidatePath("/")
+  revalidatePath("/estadisticas")
+  return { ok: true, message: "Estadísticas actualizadas." }
 }
 
 // ---------- Activities (cronograma) ----------
@@ -317,6 +350,46 @@ export async function toggleParticipantCompleted(id: number, completed: boolean)
   await db.update(participants).set({ completed }).where(eq(participants.id, id))
   revalidateAll()
   return { ok: true }
+}
+
+export async function updateParticipant(_prev: unknown, formData: FormData): Promise<ActionResult> {
+  await requireAdmin()
+
+  const id = Number(formData.get("id"))
+  const fullName = String(formData.get("fullName") ?? "").trim()
+  const email = String(formData.get("email") ?? "").trim().toLowerCase()
+  const phone = String(formData.get("phone") ?? "").trim()
+  const category = String(formData.get("category") ?? "espectador").trim() || "espectador"
+  const city = String(formData.get("city") ?? "").trim()
+  const code = String(formData.get("code") ?? "").trim().toUpperCase()
+
+  if (!id) return { ok: false, message: "Participante inválido." }
+  if (fullName.length < 2) return { ok: false, message: "Ingresa el nombre completo." }
+  if (!email.includes("@")) return { ok: false, message: "Ingresa un correo válido." }
+  if (!code) return { ok: false, message: "El código no puede estar vacío." }
+  if (!["competidor", "recreativo", "espectador"].includes(category)) {
+    return { ok: false, message: "Categoría inválida." }
+  }
+
+  const codeOwner = await db.select().from(participants).where(eq(participants.code, code)).limit(1)
+  if (codeOwner[0] && codeOwner[0].id !== id) {
+    return { ok: false, message: "Ese código ya lo usa otro participante." }
+  }
+
+  await db
+    .update(participants)
+    .set({
+      fullName,
+      email,
+      phone: phone || null,
+      category,
+      city: city || null,
+      code,
+    })
+    .where(eq(participants.id, id))
+
+  revalidateAll()
+  return { ok: true, message: "Participante actualizado." }
 }
 
 export async function deleteParticipant(id: number): Promise<ActionResult> {

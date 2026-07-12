@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react"
 import {
   Award,
+  BarChart3,
   CalendarDays,
   Images,
   LayoutDashboard,
@@ -18,5 +19,6 @@ export const adminNavItems: { href: string; label: string; icon: LucideIcon }[] 
   { href: "/admin/galeria", label: "Galería", icon: Images },
   { href: "/admin/insignias", label: "Insignias", icon: Award },
   { href: "/admin/encuestas", label: "Encuestas", icon: MessageSquareText },
+  { href: "/admin/estadisticas", label: "Estadísticas", icon: BarChart3 },
   { href: "/admin/configuracion", label: "Configuración", icon: Settings },
 ]

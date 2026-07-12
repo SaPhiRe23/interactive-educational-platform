@@ -1,12 +1,12 @@
 import { BarChart3 } from "lucide-react"
 import { PageHeader } from "@/components/page-header"
-import { getStats } from "@/lib/data"
+import { getPublicStats } from "@/lib/data"
 import { PublicStatsDashboard } from "@/components/public-stats-dashboard"
 
 export const dynamic = "force-dynamic"
 
 export default async function EstadisticasPage() {
-  const stats = await getStats()
+  const stats = await getPublicStats()
 
   return (
     <>
