@@ -2,18 +2,56 @@ import Image from "next/image"
 import { Images } from "lucide-react"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent } from "@/components/ui/card"
-import { getMedia } from "@/lib/data"
 
-export default async function GalleryPage() {
-  const media = await getMedia()
-  const galleryItems = media
-    .filter((item) => item.type === "photo")
-    .map((item) => ({
-      id: item.id,
-      src: item.url,
-      alt: item.title || "Galería de la actividad",
-    }))
+const galleryItems = [
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.56.jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.56 (1).jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.57.jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.57 (1).jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.57 (2).jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.57 (3).jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.57 (4).jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.57 (5).jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.58.jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.58 (1).jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.58 (2).jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.58 (3).jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.58 (4).jpeg",
+  },
+  {
+    src: "/gallery/WhatsApp Image 2026-07-11 at 20.06.59.jpeg",
+  },
+].map((item) => ({
+  ...item,
+  src: encodeURI(item.src),
+}))
 
+export default function GalleryPage() {
   return (
     <>
       <PageHeader
@@ -35,19 +73,13 @@ export default async function GalleryPage() {
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {galleryItems.map((item) => (
-                <figure key={item.id} className="overflow-hidden rounded-2xl border border-border/60 bg-secondary/30 shadow-sm transition-transform hover:-translate-y-1">
+                <figure key={item.src} className="overflow-hidden rounded-2xl border border-border/60 bg-secondary/30 shadow-sm transition-transform hover:-translate-y-1">
                   <div className="relative aspect-[4/3] w-full bg-muted">
-                    <Image src={item.src} alt={item.alt} fill className="object-cover" sizes="(max-width: 1280px) 50vw, 25vw" />
+                    <Image src={item.src} alt="Galería de la actividad" fill className="object-cover" sizes="(max-width: 1280px) 50vw, 25vw" />
                   </div>
                 </figure>
               ))}
             </div>
-
-            {galleryItems.length === 0 && (
-              <p className="rounded-xl border border-dashed border-border/70 bg-secondary/20 px-4 py-6 text-center text-sm text-muted-foreground">
-                Aún no hay fotos publicadas en la galería.
-              </p>
-            )}
           </CardContent>
         </Card>
       </div>
