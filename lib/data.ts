@@ -132,6 +132,110 @@ export async function getSurveyResponsesWithAnswers() {
   }))
 }
 
+export type QuestionStatResult =
+  | {
+      id: number
+      label: string
+      type: "text"
+      chartType: string
+      responses: string[]
+    }
+  | {
+      id: number
+      label: string
+      type: "stars" | "yesno" | "single_choice" | "multi_choice"
+      chartType: string
+      data: { name: string; value: number }[]
+    }
+
+export async function getSurveyQuestionStats(): Promise<QuestionStatResult[]> {
+  const questions = await db
+    .select()
+    .from(surveyQuestions)
+    .where(eq(surveyQuestions.showInStats, true))
+    .orderBy(asc(surveyQuestions.sortOrder))
+
+  if (questions.length === 0) return []
+
+  const answers = await db
+    .select()
+    .from(surveyAnswers)
+    .where(
+      inArray(
+        surveyAnswers.questionId,
+        questions.map((q) => q.id),
+      ),
+    )
+
+  const answersByQuestion = new Map<number, string[]>()
+  for (const answer of answers) {
+    if (!answer.value) continue
+    const list = answersByQuestion.get(answer.questionId) ?? []
+    list.push(answer.value)
+    answersByQuestion.set(answer.questionId, list)
+  }
+
+  return questions.map((question): QuestionStatResult => {
+    const values = answersByQuestion.get(question.id) ?? []
+
+    if (question.type === "text") {
+      return {
+        id: question.id,
+        label: question.label,
+        type: "text",
+        chartType: question.chartType,
+        responses: values.slice(0, 50),
+      }
+    }
+
+    if (question.type === "stars") {
+      const counts = new Map([1, 2, 3, 4, 5].map((n) => [String(n), 0]))
+      for (const v of values) {
+        if (counts.has(v)) counts.set(v, (counts.get(v) ?? 0) + 1)
+      }
+      return {
+        id: question.id,
+        label: question.label,
+        type: question.type,
+        chartType: question.chartType,
+        data: Array.from(counts.entries()).map(([name, value]) => ({ name: `${name} ★`, value })),
+      }
+    }
+
+    if (question.type === "multi_choice") {
+      const options = (question.options ?? "").split(",").map((o) => o.trim()).filter(Boolean)
+      const counts = new Map(options.map((o) => [o, 0]))
+      for (const v of values) {
+        for (const part of v.split("|").map((p) => p.trim())) {
+          if (counts.has(part)) counts.set(part, (counts.get(part) ?? 0) + 1)
+        }
+      }
+      return {
+        id: question.id,
+        label: question.label,
+        type: question.type,
+        chartType: question.chartType,
+        data: Array.from(counts.entries()).map(([name, value]) => ({ name, value })),
+      }
+    }
+
+    // yesno and single_choice: count exact-match values, preserving declared option order when available
+    const declaredOptions = (question.options ?? "").split(",").map((o) => o.trim()).filter(Boolean)
+    const counts = new Map<string, number>()
+    const order = declaredOptions.length > 0 ? declaredOptions : []
+    for (const opt of order) counts.set(opt, 0)
+    for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1)
+
+    return {
+      id: question.id,
+      label: question.label,
+      type: question.type as "yesno" | "single_choice",
+      chartType: question.chartType,
+      data: Array.from(counts.entries()).map(([name, value]) => ({ name, value })),
+    }
+  })
+}
+
 export async function getStats() {
   const [participantsTotal] = await db.select({ value: count() }).from(participants)
   const [completedTotal] = await db

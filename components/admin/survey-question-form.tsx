@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { QUESTION_TYPES } from "@/lib/survey-options"
+import { QUESTION_TYPES, CHART_TYPES } from "@/lib/survey-options"
 import type { SurveyQuestion } from "@/lib/db/schema"
 
 const initialState = { ok: false, message: "" }
@@ -31,6 +31,8 @@ export function SurveyQuestionForm({ question, onDone }: { question?: SurveyQues
   const [state, formAction] = useActionState(action, initialState)
   const formRef = useRef<HTMLFormElement>(null)
   const [type, setType] = useState(question?.type ?? "text")
+  const [showInStats, setShowInStats] = useState(question?.showInStats ?? false)
+  const [chartType, setChartType] = useState(question?.chartType ?? "bar")
 
   const needsOptions = type === "single_choice" || type === "multi_choice"
   const isStars = type === "stars"
@@ -42,6 +44,8 @@ export function SurveyQuestionForm({ question, onDone }: { question?: SurveyQues
       if (!isEdit) {
         formRef.current?.reset()
         setType("text")
+        setShowInStats(false)
+        setChartType("bar")
       }
       onDone?.()
     } else {
@@ -117,6 +121,43 @@ export function SurveyQuestionForm({ question, onDone }: { question?: SurveyQues
         />
         Obligatoria
       </label>
+
+      <div className="grid gap-3 rounded-lg border border-border bg-secondary/30 p-4">
+        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <input
+            type="checkbox"
+            name="showInStats"
+            checked={showInStats}
+            onChange={(e) => setShowInStats(e.target.checked)}
+            className="h-4 w-4 rounded border-input accent-primary"
+          />
+          Mostrar resultados en /estadísticas
+        </label>
+
+        {showInStats && type !== "text" && (
+          <div className="grid gap-2 sm:w-56">
+            <Label htmlFor="chartType">Tipo de gráfica</Label>
+            <input type="hidden" name="chartType" value={chartType} />
+            <Select value={chartType} onValueChange={setChartType}>
+              <SelectTrigger id="chartType">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CHART_TYPES.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>
+                    {c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {showInStats && type === "text" && (
+          <p className="text-xs text-muted-foreground">
+            Las respuestas de texto libre se muestran como una lista de citas, no como gráfica.
+          </p>
+        )}
+      </div>
 
       <div className="flex gap-2">
         <SubmitButton label={isEdit ? "Guardar cambios" : "Agregar pregunta"} />

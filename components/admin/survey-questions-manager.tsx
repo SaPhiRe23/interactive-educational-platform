@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Pencil } from "lucide-react"
+import { Pencil, BarChart3 } from "lucide-react"
 import { deleteSurveyQuestion } from "@/app/actions/admin"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -33,6 +33,7 @@ export function SurveyQuestionsManager({ questions }: { questions: SurveyQuestio
                 <TableHead>Pregunta</TableHead>
                 <TableHead className="hidden md:table-cell">Tipo</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead className="hidden sm:table-cell">En estadísticas</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -40,7 +41,7 @@ export function SurveyQuestionsManager({ questions }: { questions: SurveyQuestio
               {questions.map((q) =>
                 editingId === q.id ? (
                   <TableRow key={q.id}>
-                    <TableCell colSpan={4} className="bg-secondary/40 py-4">
+                    <TableCell colSpan={5} className="bg-secondary/40 py-4">
                       <SurveyQuestionForm question={q} onDone={() => setEditingId(null)} />
                     </TableCell>
                   </TableRow>
@@ -52,6 +53,16 @@ export function SurveyQuestionsManager({ questions }: { questions: SurveyQuestio
                     </TableCell>
                     <TableCell>
                       <ToggleQuestionActiveButton id={q.id} active={q.active} />
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {q.showInStats ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-accent-foreground">
+                          <BarChart3 className="h-3.5 w-3.5" />
+                          Sí ({q.chartType})
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

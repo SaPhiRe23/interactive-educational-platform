@@ -426,6 +426,8 @@ export async function createSurveyQuestion(_prev: unknown, formData: FormData): 
   const helperMax = String(formData.get("helperMax") ?? "").trim()
   const required = formData.get("required") === "on"
   const sortOrder = Number(formData.get("sortOrder") ?? 0)
+  const showInStats = formData.get("showInStats") === "on"
+  const chartType = String(formData.get("chartType") ?? "bar").trim() || "bar"
 
   if (label.length < 3) return { ok: false, message: "Escribe el texto de la pregunta." }
   if (!QUESTION_TYPE_VALUES.includes(type as (typeof QUESTION_TYPE_VALUES)[number])) {
@@ -444,6 +446,8 @@ export async function createSurveyQuestion(_prev: unknown, formData: FormData): 
     required,
     sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
     active: true,
+    showInStats,
+    chartType,
   })
 
   revalidateAll()
@@ -462,6 +466,8 @@ export async function updateSurveyQuestion(_prev: unknown, formData: FormData): 
   const helperMax = String(formData.get("helperMax") ?? "").trim()
   const required = formData.get("required") === "on"
   const sortOrder = Number(formData.get("sortOrder") ?? 0)
+  const showInStats = formData.get("showInStats") === "on"
+  const chartType = String(formData.get("chartType") ?? "bar").trim() || "bar"
 
   if (!id) return { ok: false, message: "Pregunta inválida." }
   if (label.length < 3) return { ok: false, message: "Escribe el texto de la pregunta." }
@@ -479,6 +485,8 @@ export async function updateSurveyQuestion(_prev: unknown, formData: FormData): 
       helperMax: helperMax || null,
       required,
       sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
+      showInStats,
+      chartType,
     })
     .where(eq(surveyQuestions.id, id))
 

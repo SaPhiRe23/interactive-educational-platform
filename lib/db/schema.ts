@@ -87,6 +87,9 @@ export const surveyQuestions = pgTable("survey_questions", {
   required: boolean("required").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
   active: boolean("active").notNull().default(true),
+  showInStats: boolean("show_in_stats").notNull().default(false),
+  // 'bar' | 'donut' | 'table' — ignored for 'text' questions, which always show as a list
+  chartType: text("chart_type").notNull().default("bar"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 

@@ -8,6 +8,14 @@ export const QUESTION_TYPES = [
 
 export type QuestionType = (typeof QUESTION_TYPES)[number]["value"]
 
+export const CHART_TYPES = [
+  { value: "bar", label: "Barras" },
+  { value: "donut", label: "Dona" },
+  { value: "table", label: "Tabla" },
+] as const
+
+export type ChartType = (typeof CHART_TYPES)[number]["value"]
+
 export const DEFAULT_SURVEY_QUESTIONS: {
   label: string
   type: QuestionType
