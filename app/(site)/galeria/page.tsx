@@ -1,7 +1,6 @@
 import Image from "next/image"
-import { Camera, Images, Sparkles } from "lucide-react"
+import { Images } from "lucide-react"
 import { PageHeader } from "@/components/page-header"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 
 const galleryItems = [
@@ -90,32 +89,31 @@ export default function GalleryPage() {
       />
 
       <div className="mx-auto max-w-7xl px-4 py-12">
-        <div className="mb-8 flex flex-wrap items-center gap-3">
-          <Badge className="gap-1">
-            <Camera className="h-3 w-3" />
-            Registro visual
-          </Badge>
-          <Badge variant="secondary" className="gap-1">
-            <Sparkles className="h-3 w-3" />
-            Patinódromo Distrital de Barranquilla
-          </Badge>
-        </div>
+        <Card className="overflow-hidden border-border/70 shadow-sm">
+          <CardContent className="space-y-6 p-6 md:p-8">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Huellas que Construyen Futuro</p>
+              <h2 className="font-heading text-2xl font-bold text-foreground md:text-3xl">El Patinódromo Habla</h2>
+              <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">
+                Registro visual de la actividad en el Patinódromo Distrital de Barranquilla. Cada imagen resume un momento de participación, reflexión y construcción colectiva.
+              </p>
+            </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {galleryItems.map((item) => (
-            <Card key={item.src} className="overflow-hidden border-border/70 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
-              <CardContent className="p-0">
-                <div className="relative aspect-[4/3] w-full bg-muted">
-                  <Image src={item.src} alt={item.title} fill className="object-cover" sizes="(max-width: 1280px) 50vw, 25vw" />
-                </div>
-                <div className="space-y-1 p-4">
-                  <h3 className="font-heading text-base font-semibold text-foreground">{item.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {galleryItems.map((item) => (
+                <figure key={item.src} className="overflow-hidden rounded-2xl border border-border/60 bg-secondary/30 shadow-sm transition-transform hover:-translate-y-1">
+                  <div className="relative aspect-[4/3] w-full bg-muted">
+                    <Image src={item.src} alt={item.title} fill className="object-cover" sizes="(max-width: 1280px) 50vw, 25vw" />
+                  </div>
+                  <figcaption className="space-y-1 p-4">
+                    <h3 className="font-heading text-sm font-semibold text-foreground">{item.title}</h3>
+                    <p className="text-xs leading-relaxed text-muted-foreground">{item.description}</p>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </>
   )
