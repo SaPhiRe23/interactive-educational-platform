@@ -76,6 +76,35 @@ export const surveyResponses = pgTable("survey_responses", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 
+export const surveyQuestions = pgTable("survey_questions", {
+  id: serial("id").primaryKey(),
+  label: text("label").notNull(),
+  // 'stars' | 'yesno' | 'single_choice' | 'multi_choice' | 'text'
+  type: text("type").notNull(),
+  options: text("options"), // comma-separated labels; only used for single_choice / multi_choice
+  helperMin: text("helper_min"), // e.g. "Nada" — shown next to the 1-star option
+  helperMax: text("helper_max"), // e.g. "Muchísimo" — shown next to the 5-star option
+  required: boolean("required").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const surveyAnswers = pgTable("survey_answers", {
+  id: serial("id").primaryKey(),
+  responseId: integer("response_id")
+    .notNull()
+    .references(() => surveyResponses.id, { onDelete: "cascade" }),
+  questionId: integer("question_id")
+    .notNull()
+    .references(() => surveyQuestions.id, { onDelete: "cascade" }),
+  // Stores the answer as text regardless of question type:
+  // stars -> "1".."5", yesno -> "yes"/"no", single_choice -> the chosen label,
+  // multi_choice -> labels joined with " | ", text -> the free-text answer.
+  value: text("value"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
 export const eventSettings = pgTable("event_settings", {
   key: text("key").primaryKey(),
   value: text("value"),
@@ -86,4 +115,6 @@ export type Activity = typeof activities.$inferSelect
 export type MapZone = typeof mapZones.$inferSelect
 export type MediaItem = typeof mediaItems.$inferSelect
 export type Badge = typeof badges.$inferSelect
+export type SurveyQuestion = typeof surveyQuestions.$inferSelect
+export type SurveyAnswer = typeof surveyAnswers.$inferSelect
 export type SurveyResponse = typeof surveyResponses.$inferSelect

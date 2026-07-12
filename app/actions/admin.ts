@@ -11,10 +11,13 @@ import {
   mediaItems,
   participantBadges,
   participants,
+  surveyAnswers,
+  surveyQuestions,
   surveyResponses,
 } from "@/lib/db/schema"
 import { isAdmin } from "@/lib/admin-auth"
 import { STAT_METRICS } from "@/lib/data"
+import { DEFAULT_SURVEY_QUESTIONS, QUESTION_TYPES } from "@/lib/survey-options"
 
 type ActionResult = { ok: boolean; message?: string }
 
@@ -407,4 +410,128 @@ export async function deleteSurveyResponse(id: number): Promise<ActionResult> {
   await db.delete(surveyResponses).where(eq(surveyResponses.id, id))
   revalidateAll()
   return { ok: true }
+}
+
+// ---------- Survey questions (encuesta configurable) ----------
+
+const QUESTION_TYPE_VALUES = QUESTION_TYPES.map((t) => t.value)
+
+export async function createSurveyQuestion(_prev: unknown, formData: FormData): Promise<ActionResult> {
+  await requireAdmin()
+
+  const label = String(formData.get("label") ?? "").trim()
+  const type = String(formData.get("type") ?? "text").trim()
+  const optionsRaw = String(formData.get("options") ?? "").trim()
+  const helperMin = String(formData.get("helperMin") ?? "").trim()
+  const helperMax = String(formData.get("helperMax") ?? "").trim()
+  const required = formData.get("required") === "on"
+  const sortOrder = Number(formData.get("sortOrder") ?? 0)
+
+  if (label.length < 3) return { ok: false, message: "Escribe el texto de la pregunta." }
+  if (!QUESTION_TYPE_VALUES.includes(type as (typeof QUESTION_TYPE_VALUES)[number])) {
+    return { ok: false, message: "Tipo de pregunta inválido." }
+  }
+  if ((type === "single_choice" || type === "multi_choice") && !optionsRaw) {
+    return { ok: false, message: "Escribe al menos una opción (separadas por coma)." }
+  }
+
+  await db.insert(surveyQuestions).values({
+    label,
+    type,
+    options: optionsRaw || null,
+    helperMin: helperMin || null,
+    helperMax: helperMax || null,
+    required,
+    sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
+    active: true,
+  })
+
+  revalidateAll()
+  revalidatePath("/encuesta")
+  return { ok: true, message: "Pregunta creada." }
+}
+
+export async function updateSurveyQuestion(_prev: unknown, formData: FormData): Promise<ActionResult> {
+  await requireAdmin()
+
+  const id = Number(formData.get("id"))
+  const label = String(formData.get("label") ?? "").trim()
+  const type = String(formData.get("type") ?? "text").trim()
+  const optionsRaw = String(formData.get("options") ?? "").trim()
+  const helperMin = String(formData.get("helperMin") ?? "").trim()
+  const helperMax = String(formData.get("helperMax") ?? "").trim()
+  const required = formData.get("required") === "on"
+  const sortOrder = Number(formData.get("sortOrder") ?? 0)
+
+  if (!id) return { ok: false, message: "Pregunta inválida." }
+  if (label.length < 3) return { ok: false, message: "Escribe el texto de la pregunta." }
+  if ((type === "single_choice" || type === "multi_choice") && !optionsRaw) {
+    return { ok: false, message: "Escribe al menos una opción (separadas por coma)." }
+  }
+
+  await db
+    .update(surveyQuestions)
+    .set({
+      label,
+      type,
+      options: optionsRaw || null,
+      helperMin: helperMin || null,
+      helperMax: helperMax || null,
+      required,
+      sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
+    })
+    .where(eq(surveyQuestions.id, id))
+
+  revalidateAll()
+  revalidatePath("/encuesta")
+  return { ok: true, message: "Pregunta actualizada." }
+}
+
+export async function toggleSurveyQuestionActive(id: number, active: boolean): Promise<ActionResult> {
+  await requireAdmin()
+  await db.update(surveyQuestions).set({ active }).where(eq(surveyQuestions.id, id))
+  revalidateAll()
+  revalidatePath("/encuesta")
+  return { ok: true }
+}
+
+export async function deleteSurveyQuestion(id: number): Promise<ActionResult> {
+  await requireAdmin()
+  await db.delete(surveyAnswers).where(eq(surveyAnswers.questionId, id))
+  await db.delete(surveyQuestions).where(eq(surveyQuestions.id, id))
+  revalidateAll()
+  revalidatePath("/encuesta")
+  return { ok: true }
+}
+
+export async function seedDefaultSurveyQuestions(): Promise<ActionResult> {
+  await requireAdmin()
+
+  const existing = await db.select({ label: surveyQuestions.label }).from(surveyQuestions)
+  const existingLabels = new Set(existing.map((q) => q.label))
+
+  const toInsert = DEFAULT_SURVEY_QUESTIONS.filter((q) => !existingLabels.has(q.label))
+  if (toInsert.length === 0) {
+    return { ok: false, message: "Las 7 preguntas ya estaban creadas." }
+  }
+
+  let nextSortOrder = existing.length
+
+  for (const q of toInsert) {
+    nextSortOrder += 1
+    await db.insert(surveyQuestions).values({
+      label: q.label,
+      type: q.type,
+      options: q.options ? q.options.join(", ") : null,
+      helperMin: q.helperMin ?? null,
+      helperMax: q.helperMax ?? null,
+      required: q.required ?? true,
+      sortOrder: nextSortOrder,
+      active: true,
+    })
+  }
+
+  revalidateAll()
+  revalidatePath("/encuesta")
+  return { ok: true, message: `Se crearon ${toInsert.length} pregunta(s).` }
 }

@@ -7,9 +7,11 @@ import {
   mediaItems,
   participantBadges,
   participants,
+  surveyAnswers,
+  surveyQuestions,
   surveyResponses,
 } from "@/lib/db/schema"
-import { asc, count, desc, eq, sql } from "drizzle-orm"
+import { asc, count, desc, eq, inArray, sql } from "drizzle-orm"
 
 export async function getSettings() {
   const rows = await db.select().from(eventSettings)
@@ -84,6 +86,50 @@ export async function getBadgesForParticipant(participantId: number) {
 
 export async function getSurveyResponses() {
   return db.select().from(surveyResponses).orderBy(desc(surveyResponses.createdAt))
+}
+
+export async function getActiveSurveyQuestions() {
+  return db
+    .select()
+    .from(surveyQuestions)
+    .where(eq(surveyQuestions.active, true))
+    .orderBy(asc(surveyQuestions.sortOrder))
+}
+
+export async function getAllSurveyQuestions() {
+  return db.select().from(surveyQuestions).orderBy(asc(surveyQuestions.sortOrder))
+}
+
+export async function getSurveyResponsesWithAnswers() {
+  const responses = await db.select().from(surveyResponses).orderBy(desc(surveyResponses.createdAt))
+  if (responses.length === 0) return []
+
+  const questions = await db.select().from(surveyQuestions)
+  const questionsById = new Map(questions.map((q) => [q.id, q]))
+
+  const answers = await db
+    .select()
+    .from(surveyAnswers)
+    .where(
+      inArray(
+        surveyAnswers.responseId,
+        responses.map((r) => r.id),
+      ),
+    )
+
+  const answersByResponse = new Map<number, { question: string; type: string; value: string }[]>()
+  for (const answer of answers) {
+    const question = questionsById.get(answer.questionId)
+    if (!question) continue
+    const list = answersByResponse.get(answer.responseId) ?? []
+    list.push({ question: question.label, type: question.type, value: answer.value ?? "" })
+    answersByResponse.set(answer.responseId, list)
+  }
+
+  return responses.map((response) => ({
+    ...response,
+    answers: answersByResponse.get(response.id) ?? [],
+  }))
 }
 
 export async function getStats() {

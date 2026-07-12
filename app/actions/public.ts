@@ -1,8 +1,9 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { participants, surveyResponses } from "@/lib/db/schema"
+import { participants, surveyAnswers, surveyQuestions, surveyResponses } from "@/lib/db/schema"
 import { getSettings } from "@/lib/data"
+import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 function generateCode() {
@@ -46,27 +47,68 @@ export async function registerParticipant(_prev: unknown, formData: FormData) {
 }
 
 export async function submitSurvey(_prev: unknown, formData: FormData) {
-  const overall = Number(formData.get("overallRating") ?? 0)
-  const organization = Number(formData.get("organizationRating") ?? 0)
-  const venue = Number(formData.get("venueRating") ?? 0)
-  const wouldRecommend = formData.get("wouldRecommend") === "yes"
-  const favoriteActivity = String(formData.get("favoriteActivity") ?? "").trim()
-  const comment = String(formData.get("comment") ?? "").trim()
+  const questions = await db
+    .select()
+    .from(surveyQuestions)
+    .where(eq(surveyQuestions.active, true))
 
-  if (overall < 1 || overall > 5) {
-    return { ok: false, message: "Selecciona una calificación general del 1 al 5." }
+  if (questions.length === 0) {
+    return { ok: false, message: "La encuesta no está disponible en este momento." }
   }
 
-  await db.insert(surveyResponses).values({
-    overallRating: overall,
-    organizationRating: organization || null,
-    venueRating: venue || null,
-    wouldRecommend,
-    favoriteActivity: favoriteActivity || null,
-    comment: comment || null,
-  })
+  const collected: { questionId: number; value: string }[] = []
+  const starsValues: number[] = []
+
+  for (const question of questions) {
+    if (question.type === "multi_choice") {
+      const values = formData.getAll(`q_${question.id}`).map((v) => String(v))
+      if (question.required && values.length === 0) {
+        return { ok: false, message: `Responde: "${question.label}"` }
+      }
+      if (values.length > 0) collected.push({ questionId: question.id, value: values.join(" | ") })
+      continue
+    }
+
+    const raw = String(formData.get(`q_${question.id}`) ?? "").trim()
+
+    if (question.required && !raw) {
+      return { ok: false, message: `Responde: "${question.label}"` }
+    }
+    if (!raw) continue
+
+    if (question.type === "stars") {
+      const n = Number(raw)
+      if (!Number.isInteger(n) || n < 1 || n > 5) {
+        return { ok: false, message: `Selecciona una calificación válida para: "${question.label}"` }
+      }
+      starsValues.push(n)
+    }
+
+    collected.push({ questionId: question.id, value: raw })
+  }
+
+  // Keep the legacy overall-rating column populated (it's NOT NULL) using the
+  // average of any star-rating answers, so older admin dashboards keep working.
+  const overallRating =
+    starsValues.length > 0 ? Math.round(starsValues.reduce((a, b) => a + b, 0) / starsValues.length) : 3
+
+  const [response] = await db
+    .insert(surveyResponses)
+    .values({ overallRating })
+    .returning({ id: surveyResponses.id })
+
+  if (collected.length > 0) {
+    await db.insert(surveyAnswers).values(
+      collected.map((a) => ({
+        responseId: response.id,
+        questionId: a.questionId,
+        value: a.value,
+      })),
+    )
+  }
 
   revalidatePath("/estadisticas")
   revalidatePath("/admin")
+  revalidatePath("/admin/encuestas")
   return { ok: true, message: "¡Gracias por tu opinión!" }
 }

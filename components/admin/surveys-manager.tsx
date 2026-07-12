@@ -1,11 +1,18 @@
 "use client"
 
+import { useState, Fragment } from "react"
+import { ChevronDown, ChevronUp } from "lucide-react"
 import { deleteSurveyResponse } from "@/app/actions/admin"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { DeleteButton } from "@/components/admin/delete-button"
-import type { SurveyResponse } from "@/lib/db/schema"
+
+type ResponseWithAnswers = {
+  id: number
+  createdAt: Date
+  answers: { question: string; type: string; value: string }[]
+}
 
 function formatDate(date: Date) {
   return new Date(date).toLocaleString("es-CO", {
@@ -16,7 +23,13 @@ function formatDate(date: Date) {
   })
 }
 
-export function SurveysManager({ responses }: { responses: SurveyResponse[] }) {
+function formatAnswerValue(type: string, value: string) {
+  return type === "stars" ? "★".repeat(Number(value) || 0) + ` (${value}/5)` : value
+}
+
+export function SurveysManager({ responses }: { responses: ResponseWithAnswers[] }) {
+  const [expandedId, setExpandedId] = useState<number | null>(null)
+
   return (
     <Card>
       <CardHeader>
@@ -30,43 +43,54 @@ export function SurveysManager({ responses }: { responses: SurveyResponse[] }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Fecha</TableHead>
-                <TableHead>General</TableHead>
-                <TableHead className="hidden sm:table-cell">Organización</TableHead>
-                <TableHead className="hidden sm:table-cell">Recinto</TableHead>
-                <TableHead className="hidden md:table-cell">Recomienda</TableHead>
-                <TableHead className="hidden lg:table-cell">Comentario</TableHead>
+                <TableHead>Respuestas</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {responses.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell className="text-muted-foreground">{formatDate(r.createdAt)}</TableCell>
-                  <TableCell className="font-semibold">{r.overallRating}/5</TableCell>
-                  <TableCell className="hidden text-muted-foreground sm:table-cell">
-                    {r.organizationRating ? `${r.organizationRating}/5` : "—"}
-                  </TableCell>
-                  <TableCell className="hidden text-muted-foreground sm:table-cell">
-                    {r.venueRating ? `${r.venueRating}/5` : "—"}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {r.wouldRecommend === null ? (
-                      "—"
-                    ) : (
-                      <Badge variant={r.wouldRecommend ? "default" : "outline"}>{r.wouldRecommend ? "Sí" : "No"}</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="hidden max-w-xs truncate text-muted-foreground lg:table-cell">
-                    {r.comment || "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DeleteButton
-                      action={deleteSurveyResponse.bind(null, r.id)}
-                      confirmText="¿Eliminar esta respuesta de encuesta?"
-                      successMessage="Respuesta eliminada."
-                    />
-                  </TableCell>
-                </TableRow>
+                <Fragment key={r.id}>
+                  <TableRow key={r.id}>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(r.createdAt)}</TableCell>
+                    <TableCell>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1.5 px-2"
+                        onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                      >
+                        {expandedId === r.id ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                        {r.answers.length} respuesta{r.answers.length === 1 ? "" : "s"}
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DeleteButton
+                        action={deleteSurveyResponse.bind(null, r.id)}
+                        confirmText="¿Eliminar esta respuesta de encuesta?"
+                        successMessage="Respuesta eliminada."
+                      />
+                    </TableCell>
+                  </TableRow>
+                  {expandedId === r.id && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="bg-secondary/30">
+                        {r.answers.length === 0 ? (
+                          <p className="py-2 text-sm text-muted-foreground">Sin respuestas registradas.</p>
+                        ) : (
+                          <dl className="grid gap-3 py-2 sm:grid-cols-2">
+                            {r.answers.map((a, i) => (
+                              <div key={i}>
+                                <dt className="text-xs font-medium text-muted-foreground">{a.question}</dt>
+                                <dd className="text-sm font-medium text-foreground">{formatAnswerValue(a.type, a.value)}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </Fragment>
               ))}
             </TableBody>
           </Table>

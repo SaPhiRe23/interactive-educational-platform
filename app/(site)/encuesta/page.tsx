@@ -2,8 +2,13 @@ import { ClipboardCheck } from "lucide-react"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { PublicSurveyForm } from "@/components/public-survey-form"
+import { getActiveSurveyQuestions } from "@/lib/data"
 
-export default function EncuestaPage() {
+export const dynamic = "force-dynamic"
+
+export default async function EncuestaPage() {
+  const questions = await getActiveSurveyQuestions()
+
   return (
     <>
       <PageHeader
@@ -21,7 +26,7 @@ export default function EncuestaPage() {
                 Responde en menos de 2 minutos.
               </p>
             </div>
-            <PublicSurveyForm />
+            <PublicSurveyForm questions={questions} />
           </CardContent>
         </Card>
       </div>
