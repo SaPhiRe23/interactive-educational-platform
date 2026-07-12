@@ -70,8 +70,8 @@ export default async function HomePage() {
       <section className="mx-auto -mt-12 max-w-7xl px-4">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
-            { label: "Participantes", value: stats.participantsTotal, icon: UserPlus },
-            { label: "Actividades", value: 7, icon: Calendar },
+            { label: "Participantes", value: 28, icon: UserPlus },
+            { label: "Actividades", value: 6, icon: Calendar },
             { label: "Insignias otorgadas", value: stats.badgesAwarded, icon: Award },
             { label: "Opiniones", value: stats.surveyTotal, icon: ClipboardCheck },
           ].map((stat) => (
@@ -95,7 +95,7 @@ export default async function HomePage() {
             Todo el evento en un solo lugar
           </h2>
           <p className="mt-3 text-muted-foreground text-pretty">
-            Explora cada sección de la plataforma. No es solo información: es participación real.
+            Explora cada sección de la plataforma diseñada para la propuesta "Huellas que Construyen Futuro: El Patinódromo Habla".
           </p>
         </div>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -123,7 +123,7 @@ export default async function HomePage() {
               ¿Listo para rodar con nosotros?
             </h2>
             <p className="max-w-xl text-sidebar-foreground/80 text-pretty">
-              Inscríbete gratis, participa en las actividades, gana insignias y llévate tu certificado digital.
+              Inscríbete gratis para sumarte a las 6 actividades pensadas para jóvenes de 14 a 28 años en el Patinódromo Distrital de Barranquilla.
             </p>
             <Button asChild size="lg">
               <Link href="/inscripcion">Quiero inscribirme</Link>

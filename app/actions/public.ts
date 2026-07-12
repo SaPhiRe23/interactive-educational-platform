@@ -21,14 +21,9 @@ export async function registerParticipant(_prev: unknown, formData: FormData) {
   const fullName = String(formData.get("fullName") ?? "").trim()
   const email = String(formData.get("email") ?? "").trim()
   const phone = String(formData.get("phone") ?? "").trim()
-  const category = String(formData.get("category") ?? "espectador").trim()
-  const city = String(formData.get("city") ?? "").trim()
 
   if (fullName.length < 3) return { ok: false, message: "Ingresa tu nombre completo." }
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, message: "Ingresa un correo válido." }
-  if (!["competidor", "recreativo", "espectador"].includes(category)) {
-    return { ok: false, message: "Selecciona una categoría válida." }
-  }
 
   let code = generateCode()
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -37,8 +32,6 @@ export async function registerParticipant(_prev: unknown, formData: FormData) {
         fullName,
         email,
         phone: phone || null,
-        category,
-        city: city || null,
         code,
       })
       revalidatePath("/estadisticas")

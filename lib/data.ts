@@ -18,10 +18,10 @@ export async function getSettings() {
     if (row.value !== null) map[row.key] = row.value
   }
   return {
-    eventName: map.event_name ?? "Festival del Patinódromo 2026",
-    eventTagline: map.event_tagline ?? "Dos días sobre ruedas",
-    eventDates: map.event_dates ?? "Agosto 2026",
-    eventLocation: map.event_location ?? "Patinódromo Municipal",
+    eventName: map.event_name ?? "Huellas que Construyen Futuro: El Patinódromo Habla",
+    eventTagline: map.event_tagline ?? "Fortalecimiento del desarrollo humano y social a través del Patinódromo Distrital de Barranquilla",
+    eventDates: map.event_dates ?? "26/06/2026",
+    eventLocation: map.event_location ?? "Patinódromo Distrital de Barranquilla",
     registrationOpen: (map.registration_open ?? "true") === "true",
   }
 }

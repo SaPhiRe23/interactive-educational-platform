@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect, useState } from "react"
+import { useActionState, useEffect } from "react"
 import { useFormStatus } from "react-dom"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const initialState = { ok: false, message: "" } as {
   ok: boolean
@@ -36,7 +35,6 @@ function SubmitButton() {
 
 export function RegistrationForm({ open }: { open: boolean }) {
   const [state, formAction] = useActionState(registerParticipant, initialState)
-  const [category, setCategory] = useState("competidor")
 
   useEffect(() => {
     if (state.message && !state.ok) toast.error(state.message)
@@ -106,24 +104,6 @@ export function RegistrationForm({ open }: { open: boolean }) {
               <Label htmlFor="phone">Teléfono</Label>
               <Input id="phone" name="phone" placeholder="300 000 0000" />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="city">Ciudad</Label>
-              <Input id="city" name="city" placeholder="Tu ciudad" />
-            </div>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="category">Categoría</Label>
-            <input type="hidden" name="category" value={category} />
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger id="category">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="competidor">Competidor</SelectItem>
-                <SelectItem value="recreativo">Recreativo</SelectItem>
-                <SelectItem value="espectador">Espectador</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           <SubmitButton />
           <p className="text-center text-xs text-muted-foreground">
