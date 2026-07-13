@@ -1,6 +1,7 @@
 import { getMapZones } from "@/lib/data"
 import { MapZonesManager } from "@/components/admin/map-zones-manager"
 
+export const dynamic = "force-dynamic";
 export default async function AdminMapPage() {
   const zones = await getMapZones()
 
