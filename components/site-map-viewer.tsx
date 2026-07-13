@@ -6,6 +6,7 @@ import { MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import type { MapZone } from "@/lib/db/schema"
+import MuralHuellas from "@/components/admin/mural-huellas" 
 
 type ZoneItem = Pick<MapZone, "id" | "name" | "description" | "posX" | "posY">
 
@@ -25,8 +26,17 @@ export function SiteMapViewer({
     sortedZones[0]?.id ?? null,
   )
 
+  // Estado para controlar la visibilidad del modal de Huellas (Punto 1)
+  const [showMural, setShowMural] = useState(false)
+
   const selectedZone =
     sortedZones.find((zone) => zone.id === selectedId) ?? sortedZones[0] ?? null
+
+  // Identificamos si el punto que el usuario está viendo actualmente es el Punto 1
+  const isZoneOneSelected = useMemo(() => {
+    if (!selectedZone) return false
+    return sortedZones.findIndex((z) => z.id === selectedZone.id) === 0
+  }, [selectedZone, sortedZones])
 
   return (
     <div className="space-y-5">
@@ -45,7 +55,13 @@ export function SiteMapViewer({
               <button
                 key={zone.id}
                 type="button"
-                onClick={() => setSelectedId(zone.id)}
+                onClick={() => {
+                  setSelectedId(zone.id)
+                  // 👣 Si presionan el botón "1" (index === 0), abrimos el modal interactivo
+                  if (index === 0) {
+                    setShowMural(true)
+                  }
+                }}
                 style={{ left: `${zone.posX}%`, top: `${zone.posY}%` }}
                 className="absolute -translate-x-1/2 -translate-y-1/2"
                 aria-label={zone.name}
@@ -80,12 +96,25 @@ export function SiteMapViewer({
             <p className="text-sm leading-relaxed text-muted-foreground">
               {selectedZone.description || "Zona estratégica del Patinódromo."}
             </p>
+            {isZoneOneSelected && (
+              <button
+                type="button"
+                onClick={() => setShowMural(true)}
+                className="mt-2 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-xl text-xs transition shadow hover:scale-105"
+              >
+                👣 Jugar: Mi huella en la ciudad
+              </button>
+            )}
           </CardContent>
         </Card>
       ) : (
         <p className="rounded-xl border border-dashed border-border/70 bg-secondary/20 px-4 py-6 text-center text-sm text-muted-foreground">
           Aún no hay zonas configuradas en el mapa.
         </p>
+      )}
+
+      {showMural && (
+        <MuralHuellas onClose={() => setShowMural(false)} />
       )}
     </div>
   )
