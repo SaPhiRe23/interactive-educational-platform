@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import type { MapZone } from "@/lib/db/schema"
 import MuralHuellas from "@/components/admin/mural-huellas" 
-import Momento2Historias from "@/components/admin/mapa/momento-2-historias" // 📖 Importada correctamente
+import Momento2Historias from "@/components/admin/momento-2-historias"
 
 type ZoneItem = Pick<MapZone, "id" | "name" | "description" | "posX" | "posY">
 
