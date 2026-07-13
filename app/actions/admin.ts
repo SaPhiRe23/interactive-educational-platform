@@ -102,6 +102,23 @@ export async function updateStatSettings(_prev: unknown, formData: FormData): Pr
   return { ok: true, message: "Estadísticas actualizadas." }
 }
 
+export async function updateSurveyQuestionsDisplay(_prev: unknown, formData: FormData): Promise<ActionResult> {
+  await requireAdmin()
+
+  const questions = await db.select({ id: surveyQuestions.id }).from(surveyQuestions)
+
+  for (const { id } of questions) {
+    const visible = formData.get(`visible_${id}`) === "on"
+    const chartType = String(formData.get(`chart_${id}`) ?? "bar").trim() || "bar"
+
+    await db.update(surveyQuestions).set({ showInStats: visible, chartType }).where(eq(surveyQuestions.id, id))
+  }
+
+  revalidateAll()
+  revalidatePath("/estadisticas")
+  return { ok: true, message: "Estadísticas de la encuesta actualizadas." }
+}
+
 // ---------- Activities (cronograma) ----------
 
 export async function createActivity(_prev: unknown, formData: FormData): Promise<ActionResult> {
@@ -426,8 +443,6 @@ export async function createSurveyQuestion(_prev: unknown, formData: FormData): 
   const helperMax = String(formData.get("helperMax") ?? "").trim()
   const required = formData.get("required") === "on"
   const sortOrder = Number(formData.get("sortOrder") ?? 0)
-  const showInStats = formData.get("showInStats") === "on"
-  const chartType = String(formData.get("chartType") ?? "bar").trim() || "bar"
 
   if (label.length < 3) return { ok: false, message: "Escribe el texto de la pregunta." }
   if (!QUESTION_TYPE_VALUES.includes(type as (typeof QUESTION_TYPE_VALUES)[number])) {
@@ -446,8 +461,6 @@ export async function createSurveyQuestion(_prev: unknown, formData: FormData): 
     required,
     sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
     active: true,
-    showInStats,
-    chartType,
   })
 
   revalidateAll()
@@ -466,8 +479,6 @@ export async function updateSurveyQuestion(_prev: unknown, formData: FormData): 
   const helperMax = String(formData.get("helperMax") ?? "").trim()
   const required = formData.get("required") === "on"
   const sortOrder = Number(formData.get("sortOrder") ?? 0)
-  const showInStats = formData.get("showInStats") === "on"
-  const chartType = String(formData.get("chartType") ?? "bar").trim() || "bar"
 
   if (!id) return { ok: false, message: "Pregunta inválida." }
   if (label.length < 3) return { ok: false, message: "Escribe el texto de la pregunta." }
@@ -485,8 +496,6 @@ export async function updateSurveyQuestion(_prev: unknown, formData: FormData): 
       helperMax: helperMax || null,
       required,
       sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
-      showInStats,
-      chartType,
     })
     .where(eq(surveyQuestions.id, id))
 

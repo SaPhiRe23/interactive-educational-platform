@@ -348,11 +348,5 @@ export async function getPublicStats() {
     }
   })
 
-  return {
-    metrics,
-    byCategory: raw.byCategory,
-    byCity: raw.byCity,
-    registrationsByDay: raw.registrationsByDay,
-    ratingDistribution: raw.ratingDistribution,
-  }
+  return { metrics }
 }
