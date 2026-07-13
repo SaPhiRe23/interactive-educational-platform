@@ -3,6 +3,7 @@ import { isAdmin } from "@/lib/admin-auth"
 import { getSettings } from "@/lib/data"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 
+export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Panel administrativo | Huellas que Construyen Futuro",
 }
