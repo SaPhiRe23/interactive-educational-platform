@@ -113,6 +113,14 @@ export const eventSettings = pgTable("event_settings", {
   value: text("value"),
 })
 
+export const huellas = pgTable("huellas", {
+  id: serial("id").primaryKey(),
+  texto: text("texto").notNull(),
+  posX: real("pos_x").notNull().default(50),
+  posY: real("pos_y").notNull().default(50),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
 export type Participant = typeof participants.$inferSelect
 export type Activity = typeof activities.$inferSelect
 export type MapZone = typeof mapZones.$inferSelect
@@ -121,3 +129,4 @@ export type Badge = typeof badges.$inferSelect
 export type SurveyQuestion = typeof surveyQuestions.$inferSelect
 export type SurveyAnswer = typeof surveyAnswers.$inferSelect
 export type SurveyResponse = typeof surveyResponses.$inferSelect
+export type Huella = typeof huellas.$inferSelect
