@@ -1,7 +1,7 @@
 // components/admin/mapa/momento-2-historias.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BookOpen, Volume2, Play, ArrowRight, Lock, Sparkles, Smile, StopCircle, Trophy, Activity, MessageCircle, Heart } from 'lucide-react';
 
 interface Story {
@@ -46,95 +46,53 @@ const STORIES: Story[] = [
 
 export default function Momento2Historias({ onClose }: { onClose: () => void }) {
   const [activeStoryIdx, setActiveStoryIdx] = useState(0);
-  const [unlockedIdx, setUnlockedIdx] = useState(0); 
+  const [unlockedIdx, setUnlockedIdx] = useState(0);
   const [mode, setMode] = useState<'select' | 'read' | 'audio' | 'animation' | 'quiz'>('select');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [quizSuccess, setQuizSuccess] = useState(false);
-  
-  // Estado para almacenar y gestionar las voces cargadas del sistema
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   const activeStory = STORIES[activeStoryIdx];
 
-  // Carga asíncrona de las voces del navegador
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      const loadVoices = () => {
-        const availableVoices = window.speechSynthesis.getVoices();
-        setVoices(availableVoices);
-      };
+  // Referencia al elemento de audio (los mp3 se generan previamente con voz neural,
+  // ver generar_audios.py, y viven en /public/audio/historia-N.mp3)
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-      loadVoices();
-      // Chrome y Edge cargan las voces de forma asíncrona, este evento detecta cuándo están listas
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
+  useEffect(() => {
+    audioRef.current = new Audio();
+    audioRef.current.onended = () => setIsSpeaking(false);
 
     return () => {
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      audioRef.current?.pause();
+      audioRef.current = null;
     };
   }, []);
 
-  // Función inteligente para buscar la voz en Español más humana disponible
-  const getBestSpanishVoice = (voiceList: SpeechSynthesisVoice[]) => {
-    const spanishVoices = voiceList.filter(v => v.lang.startsWith('es'));
-    
-    if (spanishVoices.length === 0) return null;
+  // Reproduce/pausa el audio pre-generado correspondiente a la historia activa
+  const handlePlayAudio = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
 
-    // 🏆 Prioridad 1: Voces neurales y naturales de alta fidelidad (Microsoft, Google o Apple)
-    const premiumVoice = spanishVoices.find(v => 
-      v.name.toLowerCase().includes('natural') || 
-      v.name.toLowerCase().includes('neural') || 
-      v.name.toLowerCase().includes('google') ||
-      v.name.toLowerCase().includes('monica') ||
-      v.name.toLowerCase().includes('paulina') ||
-      v.name.toLowerCase().includes('sabina') ||
-      v.name.toLowerCase().includes('alvaro')
-    );
-
-    if (premiumVoice) return premiumVoice;
-
-    // 🇨🇴 Prioridad 2: Voces latinoamericanas (Colombia, México, etc.)
-    const latamVoice = spanishVoices.find(v => 
-      v.lang.includes('CO') || 
-      v.lang.includes('MX') || 
-      v.lang.includes('US')
-    );
-
-    if (latamVoice) return latamVoice;
-
-    // Prioridad 3: Primera voz disponible en español
-    return spanishVoices[0];
+    if (isSpeaking) {
+      audio.pause();
+      setIsSpeaking(false);
+    } else {
+      const src = `/audio/historia-${activeStory.id}.mp3`;
+      // Si cambiamos de historia, actualizamos el src antes de reproducir
+      if (!audio.src.endsWith(src)) {
+        audio.src = src;
+      }
+      audio.currentTime = 0;
+      audio.play().catch(() => {
+        alert("No se pudo reproducir el audio. Verifica que el archivo exista en /public/audio/.");
+      });
+      setIsSpeaking(true);
+    }
   };
 
-  // Función para reproducir el Audio de forma fluida
-  const handlePlayAudio = () => {
-    if ('speechSynthesis' in window) {
-      if (isSpeaking) {
-        window.speechSynthesis.cancel();
-        setIsSpeaking(false);
-      } else {
-        const utterance = new SpeechSynthesisUtterance(activeStory.text);
-        
-        // Seleccionamos la mejor voz en español de nuestro cargador inteligente
-        const bestVoice = getBestSpanishVoice(voices);
-        if (bestVoice) {
-          utterance.voice = bestVoice;
-        } else {
-          utterance.lang = 'es-ES'; // Respaldo básico
-        }
-
-        utterance.rate = 0.90; // Velocidad conversacional ligeramente pausada para máxima claridad
-        utterance.pitch = 1.0; // Tono natural de voz
-        utterance.volume = 1.0; // Volumen máximo
-
-        utterance.onend = () => setIsSpeaking(false);
-        setIsSpeaking(true);
-        window.speechSynthesis.speak(utterance);
-      }
-    } else {
-      alert("Tu navegador no soporta síntesis de voz automática.");
-    }
+  const stopAudio = () => {
+    audioRef.current?.pause();
+    setIsSpeaking(false);
   };
 
   const handleSelectAnswer = (idx: number) => {
@@ -150,13 +108,14 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
   };
 
   const handleNextStory = () => {
+    stopAudio();
     if (activeStoryIdx < STORIES.length - 1) {
       setActiveStoryIdx(activeStoryIdx + 1);
       setMode('select');
       setSelectedAnswer(null);
       setQuizSuccess(false);
     } else {
-      onClose(); 
+      onClose();
     }
   };
 
@@ -164,7 +123,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      
+
       {/* Animaciones CSS personalizadas de alta calidad */}
       <style>{`
         @keyframes floatItem {
@@ -194,7 +153,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
       `}</style>
 
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col text-black border border-amber-200">
-        
+
         {/* Cabecera y Barra de Progreso */}
         <div className="p-5 border-b bg-amber-50/50">
           <div className="flex justify-between items-center mb-2">
@@ -203,15 +162,15 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
             </h2>
             <button onClick={onClose} className="text-gray-500 hover:text-black font-bold text-lg">✕</button>
           </div>
-          
+
           <div className="space-y-1">
             <div className="flex justify-between text-xs font-semibold text-amber-800">
               <span>Progreso de la dinámica</span>
               <span>{progressPercent}%</span>
             </div>
             <div className="w-full h-3 bg-amber-200/50 rounded-full overflow-hidden">
-              <div 
-                style={{ width: `${progressPercent}%` }} 
+              <div
+                style={{ width: `${progressPercent}%` }}
                 className="h-full bg-amber-600 transition-all duration-500"
               />
             </div>
@@ -228,7 +187,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
               <p className="text-sm text-gray-500 max-w-md mx-auto">
                 Elige cómo deseas descubrir esta inspiradora experiencia vivida en el Patinódromo.
               </p>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
                 <button
                   onClick={() => setMode('read')}
@@ -279,7 +238,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
           {mode === 'audio' && (
             <div className="text-center space-y-6 my-auto">
               <h3 className="text-xl font-bold text-gray-800">Escuchando la historia de {activeStory.name}</h3>
-              
+
               <div className="flex justify-center">
                 <div className="relative w-24 h-24 bg-amber-100 border border-amber-300 rounded-full flex items-center justify-center anim-float shadow-inner">
                   {isSpeaking ? (
@@ -297,14 +256,13 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                 >
                   {isSpeaking ? "Pausar Audio" : "Escuchar de nuevo"}
                 </button>
-                <p className="text-xs text-gray-500">Reproduciendo en español fluido y natural.</p>
+                <p className="text-xs text-gray-500">Narración con voz neural pre-grabada.</p>
               </div>
 
               <div className="flex justify-end pt-3 border-t">
                 <button
                   onClick={() => {
-                    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-                    setIsSpeaking(false);
+                    stopAudio();
                     setMode('quiz');
                   }}
                   className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 text-sm shadow transition"
@@ -319,9 +277,9 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
           {mode === 'animation' && (
             <div className="text-center space-y-4 my-auto">
               <h3 className="text-lg font-bold text-gray-800">{activeStory.title}</h3>
-              
+
               <div className="w-full max-w-md h-44 mx-auto bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden flex items-center justify-center shadow-inner">
-                
+
                 {/* ANIMACIÓN 1: JUAN */}
                 {activeStory.id === 1 && (
                   <div className="relative w-full h-full flex items-center justify-between px-10">
@@ -357,7 +315,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                       <Smile className="h-10 w-10 text-purple-600 anim-float" />
                       <MessageCircle className="h-6 w-6 text-purple-400 anim-star" />
                     </div>
-                    
+
                     <div className="w-1/2 h-3 bg-purple-100 rounded-full border border-purple-200 overflow-hidden relative">
                       <div className="h-full bg-purple-600 anim-star w-full" style={{ transition: 'width 2s' }} />
                       <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white uppercase">Confianza</span>
@@ -374,7 +332,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                 {activeStory.id === 3 && (
                   <div className="relative w-full h-full flex flex-col items-center justify-center px-6">
                     <div className="absolute h-1 w-4/5 bg-slate-300 rounded-full bottom-14" />
-                    
+
                     <div className="absolute bottom-14 flex flex-col items-center anim-runner" style={{ marginLeft: '-15px' }}>
                       <span className="text-3xl">🏃‍♂️</span>
                       <span className="text-[8px] font-bold text-amber-800 bg-amber-100 px-1 rounded">Andrés</span>
@@ -409,7 +367,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
           {mode === 'quiz' && (
             <div className="space-y-4 my-auto">
               <h3 className="text-lg font-bold text-gray-800 text-center">{activeStory.question}</h3>
-              
+
               <div className="space-y-2 max-w-md mx-auto">
                 {activeStory.options.map((option, idx) => (
                   <button
@@ -436,11 +394,11 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                     🏅 ¡Muy bien!
                   </h4>
                   <p className="text-xs text-emerald-700">
-                    {activeStoryIdx < STORIES.length - 1 
-                      ? "Has desbloqueado la siguiente historia." 
+                    {activeStoryIdx < STORIES.length - 1
+                      ? "Has desbloqueado la siguiente historia."
                       : "¡Has completado todas las historias del Patinódromo!"}
                   </p>
-                  
+
                   <button
                     onClick={handleNextStory}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-5 rounded-lg text-xs transition"
@@ -463,6 +421,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                 key={s.id}
                 disabled={!isUnlocked}
                 onClick={() => {
+                  stopAudio();
                   setActiveStoryIdx(idx);
                   setMode('select');
                   setSelectedAnswer(null);
