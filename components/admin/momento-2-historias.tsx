@@ -1,8 +1,8 @@
-// components/admin/mapa/momento-2-historias.tsx
+// components/admin/momento-2-historias.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Volume2, Play, Award, ArrowRight, Lock, Sparkles, Smile, Flame, StopCircle } from 'lucide-react';
+import { BookOpen, Volume2, Play, ArrowRight, Lock, Sparkles, Smile, StopCircle, Trophy, Activity, MessageCircle, Heart } from 'lucide-react';
 
 interface Story {
   id: number;
@@ -46,7 +46,7 @@ const STORIES: Story[] = [
 
 export default function Momento2Historias({ onClose }: { onClose: () => void }) {
   const [activeStoryIdx, setActiveStoryIdx] = useState(0);
-  const [unlockedIdx, setUnlockedIdx] = useState(0); // Controla qué historias están desbloqueadas
+  const [unlockedIdx, setUnlockedIdx] = useState(0); 
   const [mode, setMode] = useState<'select' | 'read' | 'audio' | 'animation' | 'quiz'>('select');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -54,14 +54,17 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
 
   const activeStory = STORIES[activeStoryIdx];
 
-  // Detener la voz al cambiar de pantalla o cerrar
+  // Forzar la carga de las voces del navegador al iniciar
   useEffect(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+    }
     return () => {
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     };
   }, []);
 
-  // Función para reproducir el Audio (Text-to-Speech)
+  // Función para reproducir el Audio buscando activamente una voz en Español
   const handlePlayAudio = () => {
     if ('speechSynthesis' in window) {
       if (isSpeaking) {
@@ -69,7 +72,23 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
         setIsSpeaking(false);
       } else {
         const utterance = new SpeechSynthesisUtterance(activeStory.text);
-        utterance.lang = 'es-CO'; // Español Colombiano o genérico
+        
+        // 🇪🇸 Búsqueda robusta de voces en español en el sistema
+        const voices = window.speechSynthesis.getVoices();
+        const spanishVoice = voices.find(v => 
+          v.lang.startsWith('es-MX') || 
+          v.lang.startsWith('es-CO') || 
+          v.lang.startsWith('es-ES') || 
+          v.lang.startsWith('es')
+        );
+
+        if (spanishVoice) {
+          utterance.voice = spanishVoice;
+        } else {
+          utterance.lang = 'es-ES'; // Idioma de respaldo si no detecta nombres específicos
+        }
+
+        utterance.rate = 0.95; // Velocidad de habla ligeramente más pausada para mejor comprensión
         utterance.onend = () => setIsSpeaking(false);
         setIsSpeaking(true);
         window.speechSynthesis.speak(utterance);
@@ -83,7 +102,6 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
     setSelectedAnswer(idx);
     if (idx === activeStory.correctAnswer) {
       setQuizSuccess(true);
-      // Desbloquear la siguiente historia si aplica
       if (activeStoryIdx === unlockedIdx && unlockedIdx < STORIES.length - 1) {
         setUnlockedIdx(unlockedIdx + 1);
       }
@@ -99,40 +117,47 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
       setSelectedAnswer(null);
       setQuizSuccess(false);
     } else {
-      onClose(); // Fin de la dinámica
+      onClose(); 
     }
   };
 
-  // Porcentaje de progreso de las historias completadas/desbloqueadas
   const progressPercent = Math.round(((unlockedIdx + (mode === 'quiz' && quizSuccess ? 1 : 0)) / STORIES.length) * 100);
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       
-      {/* Estilos CSS para las mini-animaciones inline */}
+      {/* Animaciones CSS personalizadas de alta calidad */}
       <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
+        @keyframes floatItem {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-8px) rotate(2deg); }
         }
-        @keyframes grow {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.2); }
+        @keyframes walkFootprint {
+          0% { opacity: 0; transform: scale(0.6) translateY(20px); }
+          50% { opacity: 1; transform: scale(1.1) translateY(0px); }
+          100% { opacity: 0.8; transform: scale(1) translateY(0px); }
         }
-        @keyframes run {
-          0% { transform: translateX(-30px); }
-          50% { transform: translateX(30px); }
-          100% { transform: translateX(-30px); }
+        @keyframes glowStar {
+          0%, 100% { filter: drop-shadow(0 0 2px rgba(234,179,8,0.5)); transform: scale(1); }
+          50% { filter: drop-shadow(0 0 15px rgba(234,179,8,0.9)); transform: scale(1.15); }
         }
-        .anim-float { animation: float 3s ease-in-out infinite; }
-        .anim-grow { animation: grow 2s ease-in-out infinite; }
-        .anim-run { animation: run 4s linear infinite; }
+        @keyframes runAthlete {
+          0% { left: 5%; }
+          50% { left: 80%; }
+          100% { left: 5%; }
+        }
+        .anim-float { animation: floatItem 3s ease-in-out infinite; }
+        .anim-walk-1 { animation: walkFootprint 1.5s ease-out forwards; }
+        .anim-walk-2 { animation: walkFootprint 1.5s ease-out 0.5s forwards; opacity: 0; }
+        .anim-walk-3 { animation: walkFootprint 1.5s ease-out 1s forwards; opacity: 0; }
+        .anim-star { animation: glowStar 2s ease-in-out infinite; }
+        .anim-runner { animation: runAthlete 6s linear infinite; }
       `}</style>
 
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col text-black">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col text-black border border-amber-200">
         
-        {/* Cabecera con barra de progreso */}
-        <div className="p-5 border-b bg-amber-50">
+        {/* Cabecera y Barra de Progreso */}
+        <div className="p-5 border-b bg-amber-50/50">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-xl font-bold text-amber-900 flex items-center gap-2">
               📖 Momento 2: Descubriendo historias
@@ -140,7 +165,6 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
             <button onClick={onClose} className="text-gray-500 hover:text-black font-bold text-lg">✕</button>
           </div>
           
-          {/* Barra de progreso */}
           <div className="space-y-1">
             <div className="flex justify-between text-xs font-semibold text-amber-800">
               <span>Progreso de la dinámica</span>
@@ -156,9 +180,9 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
         </div>
 
         {/* Cuerpo Principal */}
-        <div className="p-6 flex-1 min-h-[350px] flex flex-col justify-between bg-amber-50/10">
+        <div className="p-6 flex-1 min-h-[380px] flex flex-col justify-between bg-amber-50/10">
 
-          {/* MODO 1: SELECCIÓN DE ACCIÓN (Leer, Escuchar, Animación) */}
+          {/* MODO 1: SELECCIÓN */}
           {mode === 'select' && (
             <div className="text-center space-y-6 my-auto">
               <h3 className="text-2xl font-bold text-gray-800">Conoce la historia de {activeStory.name}</h3>
@@ -169,26 +193,26 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
                 <button
                   onClick={() => setMode('read')}
-                  className="flex flex-col items-center p-5 bg-white border border-amber-200 rounded-xl hover:bg-amber-50/50 hover:border-amber-400 transition group"
+                  className="flex flex-col items-center p-5 bg-white border border-amber-200 rounded-xl hover:bg-amber-50/50 hover:border-amber-400 transition group shadow-sm"
                 >
                   <BookOpen className="h-8 w-8 text-amber-600 mb-2 group-hover:scale-110 transition" />
-                  <span className="font-bold text-sm">Leer historia</span>
+                  <span className="font-bold text-sm text-amber-900">Leer historia</span>
                 </button>
 
                 <button
                   onClick={() => { setMode('audio'); handlePlayAudio(); }}
-                  className="flex flex-col items-center p-5 bg-white border border-amber-200 rounded-xl hover:bg-amber-50/50 hover:border-amber-400 transition group"
+                  className="flex flex-col items-center p-5 bg-white border border-amber-200 rounded-xl hover:bg-amber-50/50 hover:border-amber-400 transition group shadow-sm"
                 >
                   <Volume2 className="h-8 w-8 text-amber-600 mb-2 group-hover:scale-110 transition" />
-                  <span className="font-bold text-sm">Escuchar audio</span>
+                  <span className="font-bold text-sm text-amber-900">Escuchar audio</span>
                 </button>
 
                 <button
                   onClick={() => setMode('animation')}
-                  className="flex flex-col items-center p-5 bg-white border border-amber-200 rounded-xl hover:bg-amber-50/50 hover:border-amber-400 transition group"
+                  className="flex flex-col items-center p-5 bg-white border border-amber-200 rounded-xl hover:bg-amber-50/50 hover:border-amber-400 transition group shadow-sm"
                 >
                   <Play className="h-8 w-8 text-amber-600 mb-2 group-hover:scale-110 transition" />
-                  <span className="font-bold text-sm">Mini animación</span>
+                  <span className="font-bold text-sm text-amber-900">Mini animación</span>
                 </button>
               </div>
             </div>
@@ -204,7 +228,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
               <div className="flex justify-end pt-3">
                 <button
                   onClick={() => setMode('quiz')}
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-5 rounded-lg flex items-center gap-2 text-sm shadow transition"
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 text-sm shadow transition"
                 >
                   Ir a la pregunta <ArrowRight className="h-4 w-4" />
                 </button>
@@ -218,9 +242,9 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
               <h3 className="text-xl font-bold text-gray-800">Escuchando la historia de {activeStory.name}</h3>
               
               <div className="flex justify-center">
-                <div className="relative w-24 h-24 bg-amber-100 border border-amber-300 rounded-full flex items-center justify-center anim-grow">
+                <div className="relative w-24 h-24 bg-amber-100 border border-amber-300 rounded-full flex items-center justify-center anim-float shadow-inner">
                   {isSpeaking ? (
-                    <Volume2 className="h-10 w-10 text-amber-600" />
+                    <Volume2 className="h-10 w-10 text-amber-600 anim-star" />
                   ) : (
                     <StopCircle className="h-10 w-10 text-red-600" />
                   )}
@@ -230,11 +254,11 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
               <div className="flex flex-col items-center gap-3">
                 <button
                   onClick={handlePlayAudio}
-                  className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-lg font-bold text-sm transition"
+                  className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-xl font-bold text-sm transition shadow-sm"
                 >
                   {isSpeaking ? "Pausar Audio" : "Escuchar de nuevo"}
                 </button>
-                <p className="text-xs text-gray-500">Haz clic para controlar la reproducción de la historia.</p>
+                <p className="text-xs text-gray-500">Haz clic para controlar la reproducción en español colombiano.</p>
               </div>
 
               <div className="flex justify-end pt-3 border-t">
@@ -244,7 +268,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                     setIsSpeaking(false);
                     setMode('quiz');
                   }}
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-5 rounded-lg flex items-center gap-2 text-sm shadow transition"
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 text-sm shadow transition"
                 >
                   Ir a la pregunta <ArrowRight className="h-4 w-4" />
                 </button>
@@ -252,55 +276,94 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
             </div>
           )}
 
-          {/* MODO 4: MINI ANIMACIÓN CON CÓDIGO (SVG + CSS) */}
+          {/* MODO 4: MINI ANIMACIÓN INTERACTIVA (Pistas del Quiz) */}
           {mode === 'animation' && (
             <div className="text-center space-y-4 my-auto">
               <h3 className="text-lg font-bold text-gray-800">{activeStory.title}</h3>
               
-              {/* Contenedor del lienzo de animación */}
-              <div className="w-full max-w-md h-40 mx-auto bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden flex items-center justify-center">
+              {/* LIENZO DE ANIMACIÓN VECTORIAL SVG */}
+              <div className="w-full max-w-md h-44 mx-auto bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden flex items-center justify-center shadow-inner">
                 
-                {/* ANIMACIÓN 1: JUAN (Amigos y huellas flotantes) */}
+                {/* ANIMACIÓN 1: JUAN (Las huellas le guían hacia sus nuevos amigos) */}
                 {activeStory.id === 1 && (
-                  <div className="flex items-center gap-8">
-                    <div className="flex flex-col items-center anim-float">
-                      <Smile className="h-12 w-12 text-emerald-600" />
-                      <span className="text-xs font-bold text-emerald-800">Juan</span>
+                  <div className="relative w-full h-full flex items-center justify-between px-10">
+                    <div className="flex flex-col items-center">
+                      <Smile className="h-12 w-12 text-blue-500 anim-float" />
+                      <span className="text-[10px] font-bold text-blue-600">Juan Solo</span>
                     </div>
-                    <div className="text-3xl anim-grow">🤝</div>
-                    <div className="flex flex-col items-center anim-float" style={{ animationDelay: '1.5s' }}>
-                      <Smile className="h-12 w-12 text-blue-600" />
-                      <span className="text-xs font-bold text-blue-800">Amigos</span>
+
+                    {/* Sendero de huellas que aparecen */}
+                    <div className="flex gap-4 items-center">
+                      <span className="text-xl anim-walk-1">👣</span>
+                      <span className="text-xl anim-walk-2">👣</span>
+                      <span className="text-xl anim-walk-3">👣</span>
+                    </div>
+
+                    <div className="flex flex-col items-center relative">
+                      <div className="absolute -top-3 flex gap-1">
+                        <Heart className="h-4 w-4 text-red-500 fill-red-500 anim-star" />
+                        <Heart className="h-4 w-4 text-red-500 fill-red-500 anim-star" style={{ animationDelay: '0.5s' }} />
+                      </div>
+                      <div className="flex gap-1">
+                        <Smile className="h-10 w-10 text-emerald-500 anim-float" />
+                        <Smile className="h-10 w-10 text-emerald-500 anim-float" style={{ animationDelay: '0.8s' }} />
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-600">Nuevos Amigos</span>
                     </div>
                   </div>
                 )}
 
-                {/* ANIMACIÓN 2: MARÍA (Estrella creciendo y brillando) */}
+                {/* ANIMACIÓN 2: MARÍA (Sube al escenario y se enciende su confianza/estrella) */}
                 {activeStory.id === 2 && (
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <Sparkles className="h-16 w-16 text-yellow-500 anim-grow" />
-                    <span className="text-xs font-bold text-amber-800">María descubrió su capacidad</span>
+                  <div className="relative w-full h-full flex flex-col items-center justify-center space-y-2">
+                    <div className="flex items-center gap-3">
+                      <Smile className="h-10 w-10 text-purple-600 anim-float" />
+                      <MessageCircle className="h-6 w-6 text-purple-400 anim-star" />
+                    </div>
+                    
+                    {/* Barra de progreso de confianza */}
+                    <div className="w-1/2 h-3 bg-purple-100 rounded-full border border-purple-200 overflow-hidden relative">
+                      <div className="h-full bg-purple-600 anim-star w-full" style={{ transition: 'width 2s' }} />
+                      <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white uppercase">Confianza</span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <Sparkles className="h-8 w-8 text-yellow-500 anim-star" />
+                      <span className="text-xs font-bold text-purple-900">Capacidad de Liderazgo</span>
+                    </div>
                   </div>
                 )}
 
-                {/* ANIMACIÓN 3: ANDRÉS (Reloj de arena y corredor) */}
+                {/* ANIMACIÓN 3: ANDRÉS (Superando obstáculos de tiempo con constancia) */}
                 {activeStory.id === 3 && (
-                  <div className="flex flex-col items-center justify-center space-y-2 w-full px-10">
-                    <div className="flex justify-between w-full text-3xl anim-run">
-                      <span>🏃‍♂️</span>
+                  <div className="relative w-full h-full flex flex-col items-center justify-center px-6">
+                    <div className="absolute h-1 w-4/5 bg-slate-300 rounded-full bottom-14" />
+                    
+                    {/* Atleta corriendo por la pista */}
+                    <div className="absolute bottom-14 flex flex-col items-center anim-runner" style={{ marginLeft: '-15px' }}>
+                      <span className="text-3xl">🏃‍♂️</span>
+                      <span className="text-[8px] font-bold text-amber-800 bg-amber-100 px-1 rounded">Andrés</span>
                     </div>
-                    <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-amber-600 anim-grow w-3/4" />
+
+                    {/* Meta / Logro */}
+                    <div className="absolute right-8 bottom-12 flex flex-col items-center">
+                      <Trophy className="h-10 w-10 text-yellow-500 anim-star" />
+                      <span className="text-[8px] font-bold text-yellow-600 uppercase">Compromiso</span>
                     </div>
-                    <span className="text-xs font-bold text-amber-800">Esfuerzo y Disciplina</span>
+
+                    <div className="absolute top-4 text-xs font-bold text-slate-500 flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-full">
+                      <Activity className="h-3 w-3 text-red-500" />
+                      Constancia y Disciplina diaria
+                    </div>
                   </div>
                 )}
+
               </div>
 
               <div className="flex justify-end pt-3 border-t">
                 <button
                   onClick={() => setMode('quiz')}
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-5 rounded-lg flex items-center gap-2 text-sm shadow transition"
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 text-sm shadow transition"
                 >
                   Ir a la pregunta <ArrowRight className="h-4 w-4" />
                 </button>
@@ -318,7 +381,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                   <button
                     key={idx}
                     onClick={() => handleSelectAnswer(idx)}
-                    className={`w-full text-left p-3 rounded-xl border text-sm font-semibold transition ${
+                    className={`w-full text-left p-3.5 rounded-xl border text-sm font-semibold transition ${
                       selectedAnswer === idx
                         ? idx === activeStory.correctAnswer
                           ? "bg-emerald-50 border-emerald-500 text-emerald-900"
@@ -332,9 +395,9 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                 ))}
               </div>
 
-              {/* Pantalla de éxito en la respuesta */}
+              {/* Pantalla de Éxito */}
               {selectedAnswer !== null && quizSuccess && (
-                <div className="bg-emerald-50 border border-emerald-400 p-4 rounded-xl text-center space-y-2 max-w-md mx-auto">
+                <div className="bg-emerald-50 border border-emerald-400 p-4 rounded-xl text-center space-y-2 max-w-md mx-auto anim-float">
                   <h4 className="font-bold text-emerald-800 flex items-center justify-center gap-2">
                     🏅 ¡Muy bien!
                   </h4>
@@ -357,7 +420,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
 
         </div>
 
-        {/* Selector de historias en el pie */}
+        {/* Pie de Página: Selector de historias consecutivas */}
         <div className="bg-slate-50 p-4 border-t flex justify-center gap-2">
           {STORIES.map((s, idx) => {
             const isUnlocked = idx <= unlockedIdx;
@@ -373,7 +436,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                 }}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition ${
                   activeStoryIdx === idx
-                    ? "bg-amber-600 text-white"
+                    ? "bg-amber-600 text-white shadow-sm"
                     : isUnlocked
                       ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
                       : "bg-slate-200 text-slate-400 cursor-not-allowed"
