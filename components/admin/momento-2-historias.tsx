@@ -1,4 +1,4 @@
-// components/admin/momento-2-historias.tsx
+// components/admin/mapa/momento-2-historias.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -51,20 +51,63 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [quizSuccess, setQuizSuccess] = useState(false);
+  
+  // Estado para almacenar y gestionar las voces cargadas del sistema
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   const activeStory = STORIES[activeStoryIdx];
 
-  // Forzar la carga de las voces del navegador al iniciar
+  // Carga asíncrona de las voces del navegador
   useEffect(() => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.getVoices();
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const loadVoices = () => {
+        const availableVoices = window.speechSynthesis.getVoices();
+        setVoices(availableVoices);
+      };
+
+      loadVoices();
+      // Chrome y Edge cargan las voces de forma asíncrona, este evento detecta cuándo están listas
+      window.speechSynthesis.onvoiceschanged = loadVoices;
     }
+
     return () => {
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     };
   }, []);
 
-  // Función para reproducir el Audio buscando activamente una voz en Español
+  // Función inteligente para buscar la voz en Español más humana disponible
+  const getBestSpanishVoice = (voiceList: SpeechSynthesisVoice[]) => {
+    const spanishVoices = voiceList.filter(v => v.lang.startsWith('es'));
+    
+    if (spanishVoices.length === 0) return null;
+
+    // 🏆 Prioridad 1: Voces neurales y naturales de alta fidelidad (Microsoft, Google o Apple)
+    const premiumVoice = spanishVoices.find(v => 
+      v.name.toLowerCase().includes('natural') || 
+      v.name.toLowerCase().includes('neural') || 
+      v.name.toLowerCase().includes('google') ||
+      v.name.toLowerCase().includes('monica') ||
+      v.name.toLowerCase().includes('paulina') ||
+      v.name.toLowerCase().includes('sabina') ||
+      v.name.toLowerCase().includes('alvaro')
+    );
+
+    if (premiumVoice) return premiumVoice;
+
+    // 🇨🇴 Prioridad 2: Voces latinoamericanas (Colombia, México, etc.)
+    const latamVoice = spanishVoices.find(v => 
+      v.lang.includes('CO') || 
+      v.lang.includes('MX') || 
+      v.lang.includes('US')
+    );
+
+    if (latamVoice) return latamVoice;
+
+    // Prioridad 3: Primera voz disponible en español
+    return spanishVoices[0];
+  };
+
+  // Función para reproducir el Audio de forma fluida
   const handlePlayAudio = () => {
     if ('speechSynthesis' in window) {
       if (isSpeaking) {
@@ -73,22 +116,18 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
       } else {
         const utterance = new SpeechSynthesisUtterance(activeStory.text);
         
-        // 🇪🇸 Búsqueda robusta de voces en español en el sistema
-        const voices = window.speechSynthesis.getVoices();
-        const spanishVoice = voices.find(v => 
-          v.lang.startsWith('es-MX') || 
-          v.lang.startsWith('es-CO') || 
-          v.lang.startsWith('es-ES') || 
-          v.lang.startsWith('es')
-        );
-
-        if (spanishVoice) {
-          utterance.voice = spanishVoice;
+        // Seleccionamos la mejor voz en español de nuestro cargador inteligente
+        const bestVoice = getBestSpanishVoice(voices);
+        if (bestVoice) {
+          utterance.voice = bestVoice;
         } else {
-          utterance.lang = 'es-ES'; // Idioma de respaldo si no detecta nombres específicos
+          utterance.lang = 'es-ES'; // Respaldo básico
         }
 
-        utterance.rate = 0.95; // Velocidad de habla ligeramente más pausada para mejor comprensión
+        utterance.rate = 0.90; // Velocidad conversacional ligeramente pausada para máxima claridad
+        utterance.pitch = 1.0; // Tono natural de voz
+        utterance.volume = 1.0; // Volumen máximo
+
         utterance.onend = () => setIsSpeaking(false);
         setIsSpeaking(true);
         window.speechSynthesis.speak(utterance);
@@ -258,7 +297,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                 >
                   {isSpeaking ? "Pausar Audio" : "Escuchar de nuevo"}
                 </button>
-                <p className="text-xs text-gray-500">Haz clic para controlar la reproducción en español colombiano.</p>
+                <p className="text-xs text-gray-500">Reproduciendo en español fluido y natural.</p>
               </div>
 
               <div className="flex justify-end pt-3 border-t">
@@ -276,15 +315,14 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
             </div>
           )}
 
-          {/* MODO 4: MINI ANIMACIÓN INTERACTIVA (Pistas del Quiz) */}
+          {/* MODO 4: MINI ANIMACIÓN INTERACTIVA */}
           {mode === 'animation' && (
             <div className="text-center space-y-4 my-auto">
               <h3 className="text-lg font-bold text-gray-800">{activeStory.title}</h3>
               
-              {/* LIENZO DE ANIMACIÓN VECTORIAL SVG */}
               <div className="w-full max-w-md h-44 mx-auto bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden flex items-center justify-center shadow-inner">
                 
-                {/* ANIMACIÓN 1: JUAN (Las huellas le guían hacia sus nuevos amigos) */}
+                {/* ANIMACIÓN 1: JUAN */}
                 {activeStory.id === 1 && (
                   <div className="relative w-full h-full flex items-center justify-between px-10">
                     <div className="flex flex-col items-center">
@@ -292,7 +330,6 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                       <span className="text-[10px] font-bold text-blue-600">Juan Solo</span>
                     </div>
 
-                    {/* Sendero de huellas que aparecen */}
                     <div className="flex gap-4 items-center">
                       <span className="text-xl anim-walk-1">👣</span>
                       <span className="text-xl anim-walk-2">👣</span>
@@ -313,7 +350,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                   </div>
                 )}
 
-                {/* ANIMACIÓN 2: MARÍA (Sube al escenario y se enciende su confianza/estrella) */}
+                {/* ANIMACIÓN 2: MARÍA */}
                 {activeStory.id === 2 && (
                   <div className="relative w-full h-full flex flex-col items-center justify-center space-y-2">
                     <div className="flex items-center gap-3">
@@ -321,7 +358,6 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                       <MessageCircle className="h-6 w-6 text-purple-400 anim-star" />
                     </div>
                     
-                    {/* Barra de progreso de confianza */}
                     <div className="w-1/2 h-3 bg-purple-100 rounded-full border border-purple-200 overflow-hidden relative">
                       <div className="h-full bg-purple-600 anim-star w-full" style={{ transition: 'width 2s' }} />
                       <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white uppercase">Confianza</span>
@@ -334,18 +370,16 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
                   </div>
                 )}
 
-                {/* ANIMACIÓN 3: ANDRÉS (Superando obstáculos de tiempo con constancia) */}
+                {/* ANIMACIÓN 3: ANDRÉS */}
                 {activeStory.id === 3 && (
                   <div className="relative w-full h-full flex flex-col items-center justify-center px-6">
                     <div className="absolute h-1 w-4/5 bg-slate-300 rounded-full bottom-14" />
                     
-                    {/* Atleta corriendo por la pista */}
                     <div className="absolute bottom-14 flex flex-col items-center anim-runner" style={{ marginLeft: '-15px' }}>
                       <span className="text-3xl">🏃‍♂️</span>
                       <span className="text-[8px] font-bold text-amber-800 bg-amber-100 px-1 rounded">Andrés</span>
                     </div>
 
-                    {/* Meta / Logro */}
                     <div className="absolute right-8 bottom-12 flex flex-col items-center">
                       <Trophy className="h-10 w-10 text-yellow-500 anim-star" />
                       <span className="text-[8px] font-bold text-yellow-600 uppercase">Compromiso</span>
@@ -420,7 +454,7 @@ export default function Momento2Historias({ onClose }: { onClose: () => void }) 
 
         </div>
 
-        {/* Pie de Página: Selector de historias consecutivas */}
+        {/* Pie de Página: Selector de historias */}
         <div className="bg-slate-50 p-4 border-t flex justify-center gap-2">
           {STORIES.map((s, idx) => {
             const isUnlocked = idx <= unlockedIdx;
