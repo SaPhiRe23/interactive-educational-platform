@@ -64,6 +64,30 @@ export async function GET(request: NextRequest) {
     color: navy,
   })
 
+  // Fecha: ____ / ____ / 2026 — measured blank positions on the template.
+  const DATE_BASELINE_Y = 805
+  const DAY_BLANK_CENTER_X = (693 + 734) / 2
+  const MONTH_BLANK_CENTER_X = (750 + 791) / 2
+  const DATE_MAX_WIDTH = 34
+
+  function drawDatePart(text: string, centerX: number) {
+    let size = 22
+    while (size > 10 && nameFont.widthOfTextAtSize(text, size) > DATE_MAX_WIDTH) {
+      size -= 1
+    }
+    const w = nameFont.widthOfTextAtSize(text, size)
+    page.drawText(text, {
+      x: centerX - w / 2,
+      y: TEMPLATE_HEIGHT - DATE_BASELINE_Y,
+      size,
+      font: nameFont,
+      color: navy,
+    })
+  }
+
+  drawDatePart("26", DAY_BLANK_CENTER_X)
+  drawDatePart("06", MONTH_BLANK_CENTER_X)
+
   const bytes = await pdf.save()
   return new Response(bytes, {
     headers: {
