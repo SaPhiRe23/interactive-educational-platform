@@ -121,6 +121,16 @@ export const huellas = pgTable("huellas", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 
+// Momento 5 "El reto del futuro": proposals written by visitors, grouped by challenge.
+// Momento 6 "Decisión colectiva" reuses these same rows and lets visitors vote on them.
+export const ideas = pgTable("ideas", {
+  id: serial("id").primaryKey(),
+  reto: text("reto").notNull(),
+  texto: text("texto").notNull(),
+  votos: integer("votos").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
 export type Participant = typeof participants.$inferSelect
 export type Activity = typeof activities.$inferSelect
 export type MapZone = typeof mapZones.$inferSelect
@@ -130,3 +140,4 @@ export type SurveyQuestion = typeof surveyQuestions.$inferSelect
 export type SurveyAnswer = typeof surveyAnswers.$inferSelect
 export type SurveyResponse = typeof surveyResponses.$inferSelect
 export type Huella = typeof huellas.$inferSelect
+export type Idea = typeof ideas.$inferSelect

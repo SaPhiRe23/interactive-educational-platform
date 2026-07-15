@@ -1,5 +1,6 @@
 import { getMapZones } from "@/lib/data"
 import { MapZonesManager } from "@/components/admin/map-zones-manager"
+import IdeasModeracion from "@/components/admin/ideas-moderacion"
 
 export const dynamic = "force-dynamic";
 export default async function AdminMapPage() {
@@ -14,6 +15,7 @@ export default async function AdminMapPage() {
         </p>
       </div>
       <MapZonesManager zones={zones} />
+      <IdeasModeracion />
     </div>
   )
 }

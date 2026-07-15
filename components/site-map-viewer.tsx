@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import type { MapZone } from "@/lib/db/schema"
 import MuralHuellas from "@/components/admin/mural-huellas" 
 import Momento2Historias from "@/components/admin/momento-2-historias"
+import Momento5Retos from "@/components/admin/momento-5-retos"
+import Momento6Votacion from "@/components/admin/momento-6-votacion"
 
 type ZoneItem = Pick<MapZone, "id" | "name" | "description" | "posX" | "posY">
 
@@ -33,6 +35,12 @@ export function SiteMapViewer({
   // 📖 Estado para controlar la visibilidad del modal de Historias (Punto 2)
   const [showHistorias, setShowHistorias] = useState(false)
 
+  // 💡 Estado para controlar la visibilidad del modal de Retos (Punto 5)
+  const [showRetos, setShowRetos] = useState(false)
+
+  // 🗳️ Estado para controlar la visibilidad del modal de Votación (Punto 6)
+  const [showVotacion, setShowVotacion] = useState(false)
+
   const selectedZone =
     sortedZones.find((zone) => zone.id === selectedId) ?? sortedZones[0] ?? null
 
@@ -46,6 +54,18 @@ export function SiteMapViewer({
   const isZoneTwoSelected = useMemo(() => {
     if (!selectedZone) return false
     return sortedZones.findIndex((z) => z.id === selectedZone.id) === 1
+  }, [selectedZone, sortedZones])
+
+  // 💡 Identificamos si el punto que el usuario está viendo actualmente es el Punto 5
+  const isZoneFiveSelected = useMemo(() => {
+    if (!selectedZone) return false
+    return sortedZones.findIndex((z) => z.id === selectedZone.id) === 4
+  }, [selectedZone, sortedZones])
+
+  // 🗳️ Identificamos si el punto que el usuario está viendo actualmente es el Punto 6
+  const isZoneSixSelected = useMemo(() => {
+    if (!selectedZone) return false
+    return sortedZones.findIndex((z) => z.id === selectedZone.id) === 5
   }, [selectedZone, sortedZones])
 
   return (
@@ -74,6 +94,14 @@ export function SiteMapViewer({
                   // 📖 Si presionan el botón "2" (index === 1), abrimos el modal de las historias
                   if (index === 1) {
                     setShowHistorias(true)
+                  }
+                  // 💡 Si presionan el botón "5" (index === 4), abrimos el modal de retos
+                  if (index === 4) {
+                    setShowRetos(true)
+                  }
+                  // 🗳️ Si presionan el botón "6" (index === 5), abrimos el modal de votación
+                  if (index === 5) {
+                    setShowVotacion(true)
                   }
                 }}
                 style={{ left: `${zone.posX}%`, top: `${zone.posY}%` }}
@@ -132,6 +160,28 @@ export function SiteMapViewer({
                 📖 Jugar: Descubriendo historias
               </button>
             )}
+
+            {/* 💡 Botón de acceso rápido al Punto 5 */}
+            {isZoneFiveSelected && (
+              <button
+                type="button"
+                onClick={() => setShowRetos(true)}
+                className="mt-2 flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-xl text-xs transition shadow hover:scale-105"
+              >
+                💡 Jugar: El reto del futuro
+              </button>
+            )}
+
+            {/* 🗳️ Botón de acceso rápido al Punto 6 */}
+            {isZoneSixSelected && (
+              <button
+                type="button"
+                onClick={() => setShowVotacion(true)}
+                className="mt-2 flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 px-4 rounded-xl text-xs transition shadow hover:scale-105"
+              >
+                🗳️ Jugar: Decisión colectiva
+              </button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -148,6 +198,14 @@ export function SiteMapViewer({
   
       {showHistorias && (
         <Momento2Historias onClose={() => setShowHistorias(false)} />
+      )}
+
+      {showRetos && (
+        <Momento5Retos onClose={() => setShowRetos(false)} />
+      )}
+
+      {showVotacion && (
+        <Momento6Votacion onClose={() => setShowVotacion(false)} />
       )}
     </div>
   )
