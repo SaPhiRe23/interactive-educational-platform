@@ -61,9 +61,6 @@ export function SiteFooter({
       <div className="border-t border-sidebar-border/60">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-xs text-sidebar-foreground/60 sm:flex-row">
           <p>© 2026 {eventName}. Todos los derechos reservados.</p>
-          <Link href="/admin" className="transition-colors hover:text-primary">
-            Panel de administración
-          </Link>
         </div>
       </div>
     </footer>
